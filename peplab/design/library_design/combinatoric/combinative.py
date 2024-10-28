@@ -4,106 +4,83 @@ from rdkit import Chem
 from rdkit.Chem import Descriptors
 import csv
 
-# 1. Define Building Blocks
+# Step 1: Define Core Structures and Functional Groups
 def get_core_structures():
-    """
-    Returns a list of core structures (molecular scaffolds).
-    These will serve as the base to attach functional groups.
-    """
-    cores = [
-        '''
-        [ insert sample here ]
-        '''
+    return [
+        "C1=CC=CC=C1",  # Benzene
+        "C1=CC=NC=C1"   # Pyridine
     ]
-    return cores
 
 def get_functional_groups():
-    """
-    Returns a list of functional groups or substituents that can be attached to core structures.
-    """
-    functional_groups = [
-        "C",     # Methyl
-        "O",     # Hydroxyl
-        "N",     # Amine
-        "C=O"    # Carbonyl
+    return [
+        "C",    # Methyl
+        "O",    # Hydroxyl
+        "N",    # Amine
+        "C=O"   # Carbonyl
     ]
-    return functional_groups
 
-# 2. Generate Combinations
-def combine_fragments():
-    """
-    Generates combinations of core structures with functional groups.
-    """
+# Step 2-4: Generate Combinations, Calculate Properties, and Store in Dictionary
+def generate_combinations():
     cores = get_core_structures()
     functional_groups = get_functional_groups()
-
-    # Using a dictionary to store combinations
+    
+    # Dictionary to store combinations with metadata
     molecules = {}
+    
     for core in cores:
-        molecules[core] = []
+        molecules[core] = []  # Initialize a list for each core structure
+
         for group in functional_groups:
+            # Combine core and functional group (this is a simplified combination)
             smiles = f"{core}.{group}"
+            
+            # Convert SMILES to RDKit molecule
             mol = Chem.MolFromSmiles(smiles)
             
-            # Calculate properties
+            # Calculate molecular weight
             mol_weight = Descriptors.MolWt(mol) if mol else None
             
-            # Store as a dictionary with additional information
+            # Store each combination as a dictionary with metadata
             molecule_data = {
                 "smiles": smiles,
                 "functional_group": group,
                 "molecular_weight": mol_weight
             }
             
+            # Add to list of molecules for this core structure
             molecules[core].append(molecule_data)
-
-
+    
     return molecules
 
-# 3. Filtering Functionality
-def filter_by_molecular_weight(molecule_smiles, max_weight=500):
+# Step 5: Output Results to CSV
+def save_to_csv(molecule_dict, filename="output_molecules.csv"):
     """
-    Filters a molecule by its molecular weight.
-    """
-    mol = Chem.MolFromSmiles(molecule_smiles)
-    if mol:
-        mol_weight = Descriptors.MolWt(mol)
-        return mol_weight <= max_weight
-    return False
-
-def filter_molecules(molecule_list, max_weight=500):
-    """
-    Filters a list of molecules based on molecular weight.
-    """
-    filtered_molecules = []
-    for smiles in molecule_list:
-        if filter_by_molecular_weight(smiles, max_weight):
-            filtered_molecules.append(smiles)
-    return filtered_molecules
-
-# 4. Outputting Results
-def save_to_csv(molecule_list, filename="output_molecules.csv"):
-    """
-    Saves a list of molecules (SMILES strings) to a CSV file.
+    Saves the generated combinations with metadata to a CSV file.
+    Each row in the CSV represents a molecule with its core, functional group, SMILES, and properties.
     """
     with open(filename, mode='w', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow(["SMILES"])
-        for molecule in molecule_list:
-            writer.writerow([molecule])
+        # Write the header row
+        writer.writerow(["Core Structure", "Functional Group", "SMILES", "Molecular Weight"])
 
-# Main Function to Bring It All Together
+        # Write each molecule's data
+        for core, molecules in molecule_dict.items():
+            for molecule in molecules:
+                writer.writerow([
+                    core,
+                    molecule["functional_group"],
+                    molecule["smiles"],
+                    molecule["molecular_weight"]
+                ])
+
+# Main Function to Run the Entire Process
 def main():
-    # Step 1: Generate combinations
-    molecules = combine_fragments()
-
-    # Step 2: Filter molecules by molecular weight
-    filtered_molecules = filter_molecules(molecules, max_weight=500)
-
-    # Step 3: Save the filtered molecules to a CSV file
-    save_to_csv(filtered_molecules, filename="filtered_molecules.csv")
-    print(f"Generated and saved {len(filtered_molecules)} molecules.")
+    # Generate the dictionary with combinations and metadata
+    molecule_dict = generate_combinations()
+    
+    # Save results to CSV
+    save_to_csv(molecule_dict, filename="output_molecules.csv")
+    print("Combinations generated and saved to output_molecules.csv")
 
 if __name__ == "__main__":
-    main()
-    # driver code, tentative - will be updated as we continue rolling the framework
+    main() # Tentative driver code to be adapted as the framework continues
