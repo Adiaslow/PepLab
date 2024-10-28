@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 from itertools import product
 from typing import List, Callable, Any, Optional, Dict
 
@@ -79,6 +78,3 @@ if __name__ == "__main__":
 
     # Save combinations to a file
     #comb.save_to_file(all_combs, "combinations.txt")
-=======
-
->>>>>>> origin/main
