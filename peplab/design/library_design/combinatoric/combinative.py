@@ -45,36 +45,17 @@ class Combinative:
         """
         return {i: comb for i, comb in enumerate(combinations)}
 
-    '''def save_to_file(self, combinations: List[List[Any]], filename: str) -> None:
-        """
-        Saves combinations to a text file, each combination on a new line.
+'''
+EXAMPLE USAGE
+comb = Combinative([1, 2], ['a', 'b'], ['X', 'Y'])
+all_combs = comb.generate_combinations()
+print("All Combinations:", all_combs)
 
-        Parameters:
-        - combinations: List of combinations to save.
-        - filename: Name of the file to save combinations to.
-        """
-        with open(filename, "w") as file:
-            for comb in combinations:
-                line = ", ".join(map(str, comb))
-                file.write(f"{line}\n")
-        print(f"Combinations saved to {filename}")'''
+# Generate combinations with a filter (e.g., only combinations where first item is 1)
+filtered_combs = comb.generate_combinations(filter_func=lambda x: x[0] == 1)
+print("Filtered Combinations:", filtered_combs)
 
-# Example Usage
-if __name__ == "__main__":
-    # Initialize with three lists of items
-    comb = Combinative([1, 2], ['a', 'b'], ['X', 'Y'])
-
-    # Generate all combinations
-    all_combs = comb.generate_combinations()
-    print("All Combinations:", all_combs)
-
-    # Generate combinations with a filter (e.g., only combinations where first item is 1)
-    filtered_combs = comb.generate_combinations(filter_func=lambda x: x[0] == 1)
-    print("Filtered Combinations:", filtered_combs)
-
-    # Convert to dictionary
-    comb_dict = comb.to_dict(all_combs)
-    print("Combinations Dictionary:", comb_dict)
-
-    # Save combinations to a file
-    #comb.save_to_file(all_combs, "combinations.txt")
+# Convert to dictionary
+comb_dict = comb.to_dict(all_combs)
+print("Combinations Dictionary:", comb_dict)
+'''
