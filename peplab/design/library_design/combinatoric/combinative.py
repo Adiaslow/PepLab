@@ -19,7 +19,7 @@ def get_functional_groups():
         "C=O"   # Carbonyl
     ]
 
-# Step 2-4: Generate Combinations, Calculate Properties, and Store in Dictionary
+# Generate Combinations, Calculate Properties, and Store in Dictionary
 def generate_combinations():
     cores = get_core_structures()
     functional_groups = get_functional_groups()
@@ -52,7 +52,7 @@ def generate_combinations():
     
     return molecules
 
-# Step 5: Output Results to CSV
+# Output Results to CSV
 def save_to_csv(molecule_dict, filename="output_molecules.csv"):
     """
     Saves the generated combinations with metadata to a CSV file.

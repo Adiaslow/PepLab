@@ -53,7 +53,7 @@ def save_to_csv(molecule_dict, filename="output_molecules.csv"):
 # Main Function to Run the Entire Process
 def main():
     # Generate the dictionary with combinations and metadata
-    molecule_dict = generate_combinations()
+    molecule_dict = generate_permutations()
     
     # Save results to CSV
     save_to_csv(molecule_dict, filename="output_molecules.csv")
