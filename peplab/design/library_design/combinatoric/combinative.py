@@ -1,86 +1,80 @@
-# combinative.py
+from itertools import product
+from typing import List, Callable, Any, Optional, Dict
 
-from rdkit import Chem
-from rdkit.Chem import Descriptors
-import csv
+class Combinative:
+    def __init__(self, *item_lists: List[List[Any]]):
+        """
+        Initializes the Combinative class with lists of items to be combined.
 
-# Step 1: Define Core Structures and Functional Groups
-def get_core_structures():
-    return [
-        "C1=CC=CC=C1",  # Benzene
-        "C1=CC=NC=C1"   # Pyridine
-    ]
+        Parameters:
+        - item_lists: A variable number of lists, each containing items to combine.
+        """
+        self.item_lists = item_lists
 
-def get_functional_groups():
-    return [
-        "C",    # Methyl
-        "O",    # Hydroxyl
-        "N",    # Amine
-        "C=O"   # Carbonyl
-    ]
+    def generate_combinations(self, filter_func: Optional[Callable[[List[Any]], bool]] = None) -> List[List[Any]]:
+        """
+        Generates all possible combinations of items from the input lists.
 
-# Generate Combinations, Calculate Properties, and Store in Dictionary
-def generate_combinations():
-    cores = get_core_structures()
-    functional_groups = get_functional_groups()
-    
-    # Dictionary to store combinations with metadata
-    molecules = {}
-    
-    for core in cores:
-        molecules[core] = []  # Initialize a list for each core structure
+        Parameters:
+        - filter_func: Optional function that takes a combination (a list) as input and returns True if the 
+                       combination should be included in the output, False otherwise.
 
-        for group in functional_groups:
-            # Combine core and functional group (this is a simplified combination)
-            smiles = f"{core}.{group}"
-            
-            # Convert SMILES to RDKit molecule
-            mol = Chem.MolFromSmiles(smiles)
-            
-            # Calculate molecular weight
-            mol_weight = Descriptors.MolWt(mol) if mol else None
-            
-            # Store each combination as a dictionary with metadata
-            molecule_data = {
-                "smiles": smiles,
-                "functional_group": group,
-                "molecular_weight": mol_weight
-            }
-            
-            # Add to list of molecules for this core structure
-            molecules[core].append(molecule_data)
-    
-    return molecules
+        Returns:
+        - List of lists, where each sublist is a valid combination of items.
+        """
+        # Generate all combinations using Cartesian product
+        all_combinations = list(product(*self.item_lists))
+        
+        # Apply filter if provided
+        if filter_func:
+            filtered_combinations = [list(comb) for comb in all_combinations if filter_func(comb)]
+            return filtered_combinations
+        
+        # Return all combinations without filtering
+        return [list(comb) for comb in all_combinations]
 
-# Output Results to CSV
-def save_to_csv(molecule_dict, filename="output_molecules.csv"):
-    """
-    Saves the generated combinations with metadata to a CSV file.
-    Each row in the CSV represents a molecule with its core, functional group, SMILES, and properties.
-    """
-    with open(filename, mode='w', newline='') as file:
-        writer = csv.writer(file)
-        # Write the header row
-        writer.writerow(["Core Structure", "Functional Group", "SMILES", "Molecular Weight"])
+    def to_dict(self, combinations: List[List[Any]]) -> Dict[int, List[Any]]:
+        """
+        Converts a list of combinations into a dictionary where keys are indices and values are combinations.
 
-        # Write each molecule's data
-        for core, molecules in molecule_dict.items():
-            for molecule in molecules:
-                writer.writerow([
-                    core,
-                    molecule["functional_group"],
-                    molecule["smiles"],
-                    molecule["molecular_weight"]
-                ])
+        Parameters:
+        - combinations: List of combinations to convert.
 
-# Main Function to Run the Entire Process
-def main():
-    # Generate the dictionary with combinations and metadata
-    molecule_dict = generate_combinations()
-    
-    # Save results to CSV
-    save_to_csv(molecule_dict, filename="output_molecules.csv")
-    print("Combinations generated and saved to output_molecules.csv")
+        Returns:
+        - Dictionary with index keys and combination values.
+        """
+        return {i: comb for i, comb in enumerate(combinations)}
 
+    '''def save_to_file(self, combinations: List[List[Any]], filename: str) -> None:
+        """
+        Saves combinations to a text file, each combination on a new line.
+
+        Parameters:
+        - combinations: List of combinations to save.
+        - filename: Name of the file to save combinations to.
+        """
+        with open(filename, "w") as file:
+            for comb in combinations:
+                line = ", ".join(map(str, comb))
+                file.write(f"{line}\n")
+        print(f"Combinations saved to {filename}")'''
+
+# Example Usage
 if __name__ == "__main__":
-    main() # Tentative driver code to be adapted as the framework continues
+    # Initialize with three lists of items
+    comb = Combinative([1, 2], ['a', 'b'], ['X', 'Y'])
+
+    # Generate all combinations
+    all_combs = comb.generate_combinations()
+    print("All Combinations:", all_combs)
+
+    # Generate combinations with a filter (e.g., only combinations where first item is 1)
+    filtered_combs = comb.generate_combinations(filter_func=lambda x: x[0] == 1)
+    print("Filtered Combinations:", filtered_combs)
+
+    # Convert to dictionary
+    comb_dict = comb.to_dict(all_combs)
+    print("Combinations Dictionary:", comb_dict)
+
+    # Save combinations to a file
+    #comb.save_to_file(all_combs, "combinations.txt")

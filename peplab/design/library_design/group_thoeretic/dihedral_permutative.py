@@ -16,7 +16,7 @@ def get_functional_groups():
 def apply_dihedral_permutation(core, functional_groups, symmetry_order):
     """
     Generates unique configurations of functional groups around a core 
-    structure based on dihedral symmetry (Dₙ).
+    structure based on dihedral symmetry 
     
     Parameters:
     - core: SMILES string of the core structure.
