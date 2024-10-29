@@ -3,4 +3,4 @@ class ReactionMechanism:
         pass
 
     def get_type(self) -> str:
-        pass
+        return "reaction_mechanism"

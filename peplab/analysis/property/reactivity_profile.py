@@ -19,3 +19,6 @@ class ReactivityProfile:
         rate_constant = self._calculate_rate_constant(conditions)
         free_energy = self.thermodynamics.get_free_energy(conditions.temperature)
         return rate_constant * self.electron_density * math.exp(-free_energy / (8.314 * conditions.temperature))
+
+    def _calculate_rate_constant(self, conditions) -> float:
+        return 0.0
