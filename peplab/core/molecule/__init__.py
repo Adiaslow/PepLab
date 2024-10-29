@@ -1,6 +1,6 @@
-from .atom import Atom
-from .bond import Bond
-from .residue import Residue
-from .peptide import Peptide
+from .atom import GraphNode
+from .bond import GraphEdge
+from .residue import ResidueInfo
+from .peptide import PeptideInfo
 
-__all__ = ['Atom', 'Bond', 'Residue', 'Peptide']
+__all__ = ['GraphNode', 'GraphEdge', 'ResidueInfo', 'PeptideInfo']
