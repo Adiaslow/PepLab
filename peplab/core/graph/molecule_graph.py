@@ -16,52 +16,62 @@ class MolecularGraph:
         self.logger = logging.getLogger(self.__class__.__name__)
 
         @classmethod
-        def from_smiles(cls, smiles: str) -> 'MolecularGraph':
-            """Create graph from SMILES using RDKit."""
-            mol = Chem.MolFromSmiles(smiles)
-            if mol is None:
-                raise ValueError(f"Invalid SMILES: {smiles}")
+            def from_smiles(cls, smiles: str) -> 'MolecularGraph':
+                """Create molecular graph from SMILES with improved error handling."""
+                try:
+                    mol = Chem.MolFromSmiles(smiles)
+                    if mol is None:
+                        raise ValueError(f"Failed to parse SMILES: {smiles}")
 
-            Chem.SanitizeMol(mol)
-            mol = Chem.AddHs(mol)
+                    Chem.SanitizeMol(mol)
+                    mol = Chem.AddHs(mol)
 
-            graph = cls()
+                    graph = cls()
 
-            # Add atoms (nodes)
-            for atom in mol.GetAtoms():
-                node = GraphNode(
-                    id=atom.GetIdx(),
-                    element=atom.GetSymbol(),
-                    atomic_num=atom.GetAtomicNum(),
-                    formal_charge=atom.GetFormalCharge(),
-                    implicit_valence=atom.GetImplicitValence(),
-                    explicit_valence=atom.GetExplicitValence(),
-                    aromatic=atom.GetIsAromatic(),
-                    hybridization=str(atom.GetHybridization()),
-                    num_explicit_hs=atom.GetNumExplicitHs(),
-                    num_implicit_hs=atom.GetNumImplicitHs(),
-                    total_num_hs=atom.GetTotalNumHs(),
-                    degree=atom.GetDegree(),
-                    in_ring=atom.IsInRing(),
-                    chiral=atom.GetChiralTag() != Chem.rdchem.ChiralType.CHI_UNSPECIFIED,
-                    chiral_tag=str(atom.GetChiralTag())
-                )
-                graph.nodes.append(node)
+                    # Add atoms with properties from old code
+                    for atom in mol.GetAtoms():
+                        properties = {
+                            'atomic_num': atom.GetAtomicNum(),
+                            'formal_charge': atom.GetFormalCharge(),
+                            'hybridization': str(atom.GetHybridization()),
+                            'implicit_valence': atom.GetImplicitValence(),
+                            'explicit_valence': atom.GetExplicitValence(),
+                            'aromatic': atom.GetIsAromatic(),
+                            'num_explicit_hs': atom.GetNumExplicitHs(),
+                            'num_implicit_hs': atom.GetNumImplicitHs(),
+                            'total_num_hs': atom.GetTotalNumHs(),
+                            'degree': atom.GetDegree(),
+                            'in_ring': atom.IsInRing(),
+                            'chiral': atom.GetChiralTag() != Chem.rdchem.ChiralType.CHI_UNSPECIFIED,
+                            'chiral_tag': str(atom.GetChiralTag())
+                        }
 
-            # Add bonds (edges)
-            for bond in mol.GetBonds():
-                edge = GraphEdge(
-                    from_idx=bond.GetBeginAtomIdx(),
-                    to_idx=bond.GetEndAtomIdx(),
-                    bond_type=str(bond.GetBondType()),
-                    is_aromatic=bond.GetIsAromatic(),
-                    is_conjugated=bond.GetIsConjugated(),
-                    in_ring=bond.IsInRing(),
-                    stereo=str(bond.GetStereo())
-                )
-                graph.edges.append(edge)
+                        node = AtomNode(
+                            id=atom.GetIdx(),
+                            element=atom.GetSymbol(),
+                            properties=properties
+                        )
+                        graph.nodes[node.id] = node
 
-            return graph
+                    # Add bonds with properties from old code
+                    for bond in mol.GetBonds():
+                        edge = BondEdge(
+                            from_idx=bond.GetBeginAtomIdx(),
+                            to_idx=bond.GetEndAtomIdx(),
+                            bond_type=str(bond.GetBondType()),
+                            properties={
+                                'is_aromatic': bond.GetIsAromatic(),
+                                'is_conjugated': bond.GetIsConjugated(),
+                                'in_ring': bond.IsInRing(),
+                                'stereo': str(bond.GetStereo())
+                            }
+                        )
+                        graph.edges.append(edge)
+
+                    return graph
+
+                except Exception as e:
+                    raise ValueError(f"Error creating molecular graph from SMILES: {str(e)}")
 
         def get_neighbors(self, node_id: int) -> List[Tuple[GraphNode, GraphEdge]]:
             """Get all neighbors of a node with connecting edges."""
