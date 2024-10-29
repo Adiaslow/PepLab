@@ -21,69 +21,76 @@ class LibraryParser:
 
     @staticmethod
     def parse(file_path: Union[str, Path]) -> LibraryInfo:
-        """Parses a library file into a LibraryInfo object.
-
-        Args:
-            file_path: Path to the input file (CSV or JSON).
-
-        Returns:
-            LibraryInfo object containing the parsed data.
-
-        Raises:
-            ValueError: If the file format is not supported.
-        """
+        """Parse library file into LibraryInfo object."""
         file_path = Path(file_path)
         if file_path.suffix.lower() == '.csv':
             return LibraryParser._parse_csv(file_path)
-        elif file_path.suffix.lower() == '.json':
-            return LibraryParser._parse_json(file_path)
         else:
-            raise ValueError(
-                f"Unsupported file format: {file_path.suffix}. "
-                "Please provide either CSV or JSON file."
-            )
+            raise ValueError("Please provide a CSV file")
 
     @staticmethod
     def _parse_csv(file_path: Path) -> LibraryInfo:
-        """Parses a CSV file into a LibraryInfo object.
+        """Parse CSV file with specified format.
 
-        Args:
-            file_path: Path to the CSV file.
-
-        Returns:
-            LibraryInfo object containing the parsed data.
+        Expected columns:
+        - library_index
+        - position_index
+        - residue_index
+        - name
+        - smiles
+        - nucleophile
+        - electrophile
         """
-        df = pd.read_csv(file_path)
-        positions = {}
+        try:
+            # Read CSV
+            df = pd.read_csv(file_path)
+            required_columns = [
+                'library_index', 'position_index', 'residue_index',
+                'name', 'smiles', 'nucleophile', 'electrophile'
+            ]
 
-        # Group by position
-        for pos_idx in df['position_index'].unique():
-            pos_data = df[df['position_index'] == pos_idx]
-            residues = {}
+            # Validate columns
+            missing_cols = [col for col in required_columns if col not in df.columns]
+            if missing_cols:
+                raise ValueError(f"Missing required columns: {missing_cols}")
 
-            # Create residues for this position
-            for _, row in pos_data.iterrows():
-                residue_key = f"residue_{row['residue_index'] + 1}"
-                residues[residue_key] = ResidueInfo(
-                    name=row['name'],
-                    smiles=row['smiles'],
-                    nucleophile=row['nucleophile'],
-                    electrophile=row['electrophile']
-                )
+            # Get first library
+            library_idx = df['library_index'].iloc[0]
+            df = df[df['library_index'] == library_idx]
 
-            position_key = f"position_{pos_idx + 1}"
-            positions[position_key] = PositionInfo(residues=residues)
+            positions = {}
 
-        # Default properties
-        properties = {
-            'alogp': True,
-            'exact_mass': True,
-            'rotatable_bonds': True,
-            'hbd_count': True,
-            'hba_count': True
-        }
+            # Group by position
+            for pos_idx in df['position_index'].unique():
+                pos_data = df[df['position_index'] == pos_idx]
+                residues = {}
 
-        return LibraryInfo(positions=positions, properties=properties)
+                # Create residues for this position
+                for _, row in pos_data.iterrows():
+                    residue_key = f"residue_{row['residue_index'] + 1}"
+                    residues[residue_key] = ResidueInfo(
+                        name=row['name'],
+                        smiles=row['smiles'],
+                        nucleophile=row['nucleophile'],
+                        electrophile=row['electrophile']
+                    )
+
+                position_key = f"position_{pos_idx + 1}"
+                positions[position_key] = PositionInfo(residues=residues)
+
+            # Default properties
+            properties = {
+                'alogp': True,
+                'exact_mass': True,
+                'rotatable_bonds': True,
+                'hbd_count': True,
+                'hba_count': True
+            }
+
+            return LibraryInfo(positions=positions, properties=properties)
+
+        except Exception as e:
+            raise ValueError(f"Error parsing CSV file: {str(e)}")
 
     @staticmethod
     def _parse_json(file_path: Path) -> LibraryInfo:
