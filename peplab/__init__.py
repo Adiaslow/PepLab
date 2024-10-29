@@ -6,13 +6,14 @@ in silico peptide libraries with a focus on chemical reactivity and
 structural properties.
 """
 
+"""
 from .core import (
     MolecularEntity,
     PropertyStore,
-    Atom,
-    Bond,
-    Residue,
-    Peptide,
+    GraphNode,
+    GraphEdge
+    ResidueInfo,
+    PeptideInfo,
     MoleculeGraph,
     ReactiveSite,
     ReactionMechanism,
@@ -25,11 +26,6 @@ from .analysis import (
     ThermodynamicParameters,
     ReactivityProfile,
     StructureGenerator
-)
-
-from .utils import (
-    ReactivityType,
-    validate_smiles
 )
 
 __version__ = '0.1.0'
@@ -57,6 +53,6 @@ __all__ = [
     'StructureGenerator',
 
     # Utilities
-    'ReactivityType',
-    'validate_smiles'
+
 ]
+"""
