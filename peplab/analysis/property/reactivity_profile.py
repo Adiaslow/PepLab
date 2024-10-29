@@ -1,7 +1,8 @@
 from typing import Dict, Optional
 import math
 
-from thermodynamics import ThermodynamicParameters
+from .thermodynamics import ThermodynamicParameters
+from ...core.reaction.reaction_conditions import ReactionConditions
 
 class ReactivityProfile:
     """Defines chemical reactivity characteristics."""
