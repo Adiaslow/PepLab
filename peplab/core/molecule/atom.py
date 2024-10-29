@@ -3,7 +3,7 @@ from typing import Dict
 
 @dataclass
 class GraphNode:
-    """Represents a single atom in the molecular graph."""
+    """Represents an atom in the molecular graph."""
     id: int
     element: str
     atomic_num: int

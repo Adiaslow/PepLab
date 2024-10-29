@@ -3,7 +3,7 @@ from typing import Dict
 
 @dataclass
 class GraphEdge:
-    """Represents a single bond in the molecular graph."""
+    """Represents a bond in the molecular graph."""
     from_idx: int
     to_idx: int
     bond_type: str
