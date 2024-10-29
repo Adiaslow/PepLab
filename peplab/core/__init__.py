@@ -6,7 +6,7 @@ from .molecule.peptide import PeptideInfo
 
 from .graph.molecule_graph import MolecularGraph
 from .reaction.reactive_site import ReactiveSite
-from .reaction.reaction_mechanism import ReactionMechanism
+# from .reaction.reaction_mechanism import ReactionMechanism
 from .reaction.reaction_pathway import ReactionPathway
 from .library.library import LibraryInfo
 from .library.library_parser import LibraryParser
@@ -21,7 +21,7 @@ __all__ = [
     'PeptideInfo',
     'MolecularGraph',
     'ReactiveSite',
-    'ReactionMechanism',
+#     'ReactionMechanism',
     'ReactionPathway',
     'LibraryInfo',
     'LibraryParser'
