@@ -11,8 +11,7 @@ class MolecularGraph:
         self.edges: List[GraphEdge] = []
         self.logger = logging.getLogger(self.__class__.__name__)
 
-    @staticmethod
-    def from_smiles(smiles: str) -> 'MolecularGraph':
+    def from_smiles(self, smiles: str) -> 'MolecularGraph':
         """Create molecular graph from SMILES."""
         graph = MolecularGraph()
         try:
