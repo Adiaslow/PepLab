@@ -6,17 +6,15 @@ from ..molecule.atom import GraphNode
 from ..molecule.bond import GraphEdge
 
 class MolecularGraph:
-    """Graph representation of a molecule."""
-
     def __init__(self):
         self.nodes: List[GraphNode] = []
         self.edges: List[GraphEdge] = []
         self.logger = logging.getLogger(self.__class__.__name__)
 
-    @classmethod
-    def from_smiles(cls, smiles: str) -> 'MolecularGraph':
+    @staticmethod
+    def from_smiles(smiles: str) -> 'MolecularGraph':
         """Create molecular graph from SMILES."""
-        instance = cls()
+        graph = MolecularGraph()
         try:
             mol = Chem.MolFromSmiles(smiles)
             if mol is None:
@@ -44,7 +42,7 @@ class MolecularGraph:
                     chiral=atom.GetChiralTag() != Chem.rdchem.ChiralType.CHI_UNSPECIFIED,
                     chiral_tag=str(atom.GetChiralTag())
                 )
-                instance.nodes.append(node)
+                graph.nodes.append(node)
 
             # Add bonds
             for bond in mol.GetBonds():
@@ -57,12 +55,12 @@ class MolecularGraph:
                     in_ring=bond.IsInRing(),
                     stereo=str(bond.GetStereo())
                 )
-                instance.edges.append(edge)
+                graph.edges.append(edge)
 
-            return instance
-
+            return graph
         except Exception as e:
             raise ValueError(f"Error creating molecular graph from SMILES: {str(e)}")
+
 
     def get_neighbors(self, node_id: int) -> List[Tuple[GraphNode, GraphEdge]]:
         """Get all neighbors of a node with connecting edges."""
