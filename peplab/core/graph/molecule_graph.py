@@ -9,14 +9,14 @@ class MolecularGraph:
     """Graph representation of a molecule."""
 
     def __init__(self):
-        """Initialize empty molecular graph."""
         self.nodes: List[GraphNode] = []
         self.edges: List[GraphEdge] = []
         self.logger = logging.getLogger(self.__class__.__name__)
 
     @classmethod
     def from_smiles(cls, smiles: str) -> 'MolecularGraph':
-        """Create molecular graph from SMILES with improved error handling."""
+        """Create molecular graph from SMILES."""
+        instance = cls()
         try:
             mol = Chem.MolFromSmiles(smiles)
             if mol is None:
@@ -25,46 +25,28 @@ class MolecularGraph:
             Chem.SanitizeMol(mol)
             mol = Chem.AddHs(mol)
 
-            graph = cls()
-
-            # Add atoms with properties from old code
+            # Add atoms
             for atom in mol.GetAtoms():
-                properties = {
-                    'atomic_num': atom.GetAtomicNum(),
-                    'formal_charge': atom.GetFormalCharge(),
-                    'hybridization': str(atom.GetHybridization()),
-                    'implicit_valence': atom.GetImplicitValence(),
-                    'explicit_valence': atom.GetExplicitValence(),
-                    'aromatic': atom.GetIsAromatic(),
-                    'num_explicit_hs': atom.GetNumExplicitHs(),
-                    'num_implicit_hs': atom.GetNumImplicitHs(),
-                    'total_num_hs': atom.GetTotalNumHs(),
-                    'degree': atom.GetDegree(),
-                    'in_ring': atom.IsInRing(),
-                    'chiral': atom.GetChiralTag() != Chem.rdchem.ChiralType.CHI_UNSPECIFIED,
-                    'chiral_tag': str(atom.GetChiralTag())
-                }
-
                 node = GraphNode(
                     id=atom.GetIdx(),
                     element=atom.GetSymbol(),
-                    atomic_num=properties['atomic_num'],
-                    formal_charge=properties['formal_charge'],
-                    implicit_valence=properties['implicit_valence'],
-                    explicit_valence=properties['explicit_valence'],
-                    aromatic=properties['aromatic'],
-                    hybridization=properties['hybridization'],
-                    num_explicit_hs=properties['num_explicit_hs'],
-                    num_implicit_hs=properties['num_implicit_hs'],
-                    total_num_hs=properties['total_num_hs'],
-                    degree=properties['degree'],
-                    in_ring=properties['in_ring'],
-                    chiral=properties['chiral'],
-                    chiral_tag=properties['chiral_tag']
+                    atomic_num=atom.GetAtomicNum(),
+                    formal_charge=atom.GetFormalCharge(),
+                    implicit_valence=atom.GetImplicitValence(),
+                    explicit_valence=atom.GetExplicitValence(),
+                    aromatic=atom.GetIsAromatic(),
+                    hybridization=str(atom.GetHybridization()),
+                    num_explicit_hs=atom.GetNumExplicitHs(),
+                    num_implicit_hs=atom.GetNumImplicitHs(),
+                    total_num_hs=atom.GetTotalNumHs(),
+                    degree=atom.GetDegree(),
+                    in_ring=atom.IsInRing(),
+                    chiral=atom.GetChiralTag() != Chem.rdchem.ChiralType.CHI_UNSPECIFIED,
+                    chiral_tag=str(atom.GetChiralTag())
                 )
-                graph.nodes.append(node)
+                instance.nodes.append(node)
 
-            # Add bonds with properties from old code
+            # Add bonds
             for bond in mol.GetBonds():
                 edge = GraphEdge(
                     from_idx=bond.GetBeginAtomIdx(),
@@ -75,9 +57,9 @@ class MolecularGraph:
                     in_ring=bond.IsInRing(),
                     stereo=str(bond.GetStereo())
                 )
-                graph.edges.append(edge)
+                instance.edges.append(edge)
 
-            return graph
+            return instance
 
         except Exception as e:
             raise ValueError(f"Error creating molecular graph from SMILES: {str(e)}")
@@ -95,7 +77,7 @@ class MolecularGraph:
         return neighbors
 
     def find_reactive_sites(self, nuc_pattern: str, elec_pattern: str) -> None:
-        """Find and mark reactive sites matching old code logic exactly."""
+        """Find and mark reactive sites."""
         if nuc_pattern == 'NH2':
             self._find_nh2_pattern()
         elif nuc_pattern == 'NH':
@@ -105,7 +87,6 @@ class MolecularGraph:
             self._find_cooh_pattern()
 
     def _find_nh2_pattern(self) -> None:
-        """Find NH2 groups matching old code exactly."""
         for node in self.nodes:
             if node.element == 'N':
                 neighbors = self.get_neighbors(node.id)
@@ -116,7 +97,6 @@ class MolecularGraph:
                     node.is_reactive_nuc = True
 
     def _find_nh_pattern(self) -> None:
-        """Find NH groups matching old code exactly."""
         for node in self.nodes:
             if node.element == 'N':
                 neighbors = self.get_neighbors(node.id)
@@ -127,7 +107,6 @@ class MolecularGraph:
                     node.is_reactive_nuc = True
 
     def _find_cooh_pattern(self) -> None:
-        """Find COOH groups matching old code exactly."""
         for node in self.nodes:
             if node.element == 'C':
                 neighbors = self.get_neighbors(node.id)
@@ -152,7 +131,7 @@ class MolecularGraph:
                     node.is_reactive_elec = True
 
     def to_dict(self) -> Dict:
-        """Convert to dictionary format matching old code."""
+        """Convert to dictionary format."""
         return {
             'nodes': [
                 {
