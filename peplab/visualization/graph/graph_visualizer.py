@@ -2,6 +2,8 @@ from typing import Tuple, Optional
 import matplotlib.pyplot as plt
 import networkx as nx
 
+from ..cpk_colors import CPKColors
+
 
 class GraphVisualizer:
     """Visualizes molecular graphs using NetworkX."""
