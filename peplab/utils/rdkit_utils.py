@@ -98,8 +98,7 @@ class RDKitUtils:
             'edges': edges
         }
 
-    @staticmethod
-    def graph_dict_to_mol(graph: Dict) -> Chem.Mol:
+    def graph_dict_to_mol(self, graph: Dict) -> Chem.Mol:
         """Converts a graph dictionary back to an RDKit molecule.
 
         Args:
