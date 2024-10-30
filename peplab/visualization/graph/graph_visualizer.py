@@ -20,6 +20,7 @@ class GraphVisualizer:
         Returns:
             Matplotlib figure object.
         """
+        print("Creating graph plot...")
         try:
             from peplab.visualization.cpk_colors import CPKColors
         except ImportError:
