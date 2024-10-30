@@ -24,7 +24,8 @@ class GraphVisualizer:
         """
         # Create NetworkX graph
         G = nx.Graph()
-
+        print(CPKColors)
+        print(CPKColors.get_color('C'))
         # Add nodes
         for node in graph_dict['nodes']:
             if node['element'] != 'H':  # Skip explicit hydrogens
