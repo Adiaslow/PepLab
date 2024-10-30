@@ -1,6 +1,8 @@
 from typing import Dict, Optional, Tuple
 from rdkit import Chem
 
+from .rdkit_utils import graph_dict_to_mol
+
 class SMILESGenerator:
     """Generates SMILES strings from molecular graphs."""
 
