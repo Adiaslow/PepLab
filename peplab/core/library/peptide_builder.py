@@ -1,6 +1,6 @@
 # @title Peptide Builder
 
-"""Peptide builder with improved error handling."""
+"""Peptide builder with threading support and progress tracking."""
 
 import logging
 from typing import List, Dict, Optional
@@ -8,8 +8,10 @@ from dataclasses import dataclass
 import itertools
 from itertools import product
 import copy
+import concurrent.futures
 from tqdm import tqdm
-
+import threading
+from queue import Queue
 
 from ..graph.molecule_graph import MolecularGraph
 from ..molecule.atom import GraphNode
@@ -18,17 +20,53 @@ from ..molecule.peptide import PeptideInfo
 from .library import LibraryInfo
 
 class PeptideBuilder:
-    """Handles construction of peptides with improved error handling."""
+    """Handles construction of peptides with threading support."""
 
-    def __init__(self):  # Fixed syntax: __init__ not **init**
-        """Initialize builder with logging."""
+    def __init__(self, max_workers: Optional[int] = None):
+        """Initialize builder with logging and threading settings."""
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.max_workers = max_workers
+        self._progress_queue = Queue()
+        self._total_combinations = 0
+
+    def _process_combination(self, combo: tuple) -> Optional[PeptideInfo]:
+        """Process a single combination of residues."""
+        try:
+            residue_graphs = [res['graph'] for res in combo]
+            peptide = self.build_linear_peptide(residue_graphs)
+
+            if self._cyclize:
+                peptide = self.cyclize_peptide(peptide)
+                peptide_type = 'cyclic'
+            else:
+                peptide_type = 'linear'
+
+            self._progress_queue.put(1)  # Signal progress
+
+            return PeptideInfo(
+                graph=peptide.to_dict(),
+                sequence=[res['id'] for res in combo],
+                peptide_type=peptide_type,
+                smiles=None
+            )
+        except Exception as e:
+            self.logger.warning(f"Error generating peptide: {str(e)}")
+            self._progress_queue.put(1)  # Signal progress even for failures
+            return None
+
+    def _progress_tracker(self, total: int):
+        """Track progress using tqdm."""
+        with tqdm(total=total, desc="Generating peptides") as pbar:
+            completed = 0
+            while completed < total:
+                self._progress_queue.get()
+                completed += 1
+                pbar.update(1)
 
     def enumerate_library(self, library_info: LibraryInfo, cyclize: bool = False) -> List[PeptideInfo]:
-        """Enumerate peptide library with detailed error tracking."""
+        """Enumerate peptide library with threading support."""
         peptides = []
-        total_attempts = 0
-        successful = 0
+        self._cyclize = cyclize  # Store cyclize parameter for use in _process_combination
 
         try:
             positions = sorted(library_info.positions.keys())
@@ -62,35 +100,47 @@ class PeptideBuilder:
 
                 residue_options.append(pos_residues)
 
-            # Generate combinations
-            for combo in tqdm(product(*residue_options), desc="Generating peptides"):
-                total_attempts += 1
-                try:
-                    residue_graphs = [res['graph'] for res in combo]
-                    peptide = self.build_linear_peptide(residue_graphs)
+            # Calculate total combinations
+            self._total_combinations = 1
+            for options in residue_options:
+                self._total_combinations *= len(options)
 
-                    if cyclize:
-                        peptide = self.cyclize_peptide(peptide)
-                        peptide_type = 'cyclic'
-                    else:
-                        peptide_type = 'linear'
+            # Start progress tracking thread
+            progress_thread = threading.Thread(
+                target=self._progress_tracker,
+                args=(self._total_combinations,)
+            )
+            progress_thread.start()
 
-                    peptides.append(PeptideInfo(
-                        graph=peptide.to_dict(),
-                        sequence=[res['id'] for res in combo],
-                        peptide_type=peptide_type,
-                        smiles=None  # Will be generated later
-                    ))
+            # Try multithreading first
+            try:
+                with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+                    futures = []
+                    for combo in product(*residue_options):
+                        futures.append(executor.submit(self._process_combination, combo))
 
-                    successful += 1
+                    for future in concurrent.futures.as_completed(futures):
+                        result = future.result()
+                        if result is not None:
+                            peptides.append(result)
 
-                except Exception as e:
-                    self.logger.warning(
-                        f"Error generating peptide combination {total_attempts}: {str(e)}"
-                    )
+            except (ImportError, RuntimeError) as e:
+                self.logger.warning(f"Threading unavailable: {str(e)}. Falling back to single-threaded mode.")
+                # Clear progress queue and restart progress tracking for single-threaded mode
+                while not self._progress_queue.empty():
+                    self._progress_queue.get()
+
+                # Process combinations sequentially
+                for combo in product(*residue_options):
+                    result = self._process_combination(combo)
+                    if result is not None:
+                        peptides.append(result)
+
+            # Wait for progress tracking to complete
+            progress_thread.join()
 
             self.logger.info(
-                f"Generated {successful} out of {total_attempts} possible peptides"
+                f"Generated {len(peptides)} out of {self._total_combinations} possible peptides"
             )
             return peptides
 
