@@ -10,6 +10,7 @@ from .reaction.reactive_site import ReactiveSite
 from .reaction.reaction_pathway import ReactionPathway
 from .library.library import LibraryInfo
 from .library.library_parser import LibraryParser
+from .library.peptide_library_generator import PeptideLibraryGenerator
 
 
 __all__ = [
@@ -21,8 +22,9 @@ __all__ = [
     'PeptideInfo',
     'MolecularGraph',
     'ReactiveSite',
-#     'ReactionMechanism',
+    # 'ReactionMechanism',
     'ReactionPathway',
     'LibraryInfo',
-    'LibraryParser'
+    'LibraryParser',
+    'PeptideLibraryGenerator'
 ]

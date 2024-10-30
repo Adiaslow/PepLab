@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from ..core.library.peptide_library_generator import PeptideLibraryGenerator
+from peplab.core.library.peptide_library_generator import PeptideLibraryGenerator
 
 def run_test(input_path: str, output_dir: Path) -> int:
     """Example usage of the peptide library generator."""
