@@ -20,6 +20,7 @@ class SMILESGenerator:
         Returns:
             Tuple of (SMILES string or None, success boolean).
         """
+
         try:
             mol = RDKitUtils.graph_dict_to_mol(graph_dict)
             if mol is None:
