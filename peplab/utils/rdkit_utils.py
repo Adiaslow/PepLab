@@ -9,7 +9,6 @@ and extracting chemical information.
 from typing import Dict
 from rdkit import Chem
 
-
 class RDKitUtils:
     @staticmethod
     def get_atom_info(atom: Chem.Atom) -> Dict:
@@ -98,7 +97,8 @@ class RDKitUtils:
             'edges': edges
         }
 
-    def graph_dict_to_mol(self, graph: Dict) -> Chem.Mol:
+    @staticmethod
+    def graph_dict_to_mol(graph: Dict) -> Chem.Mol:
         """Converts a graph dictionary back to an RDKit molecule.
 
         Args:
