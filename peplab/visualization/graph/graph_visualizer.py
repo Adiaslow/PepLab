@@ -2,8 +2,6 @@ from typing import Tuple, Optional
 import matplotlib.pyplot as plt
 import networkx as nx
 
-from peplab.visualization.cpk_colors import CPKColors
-
 class GraphVisualizer:
     """Visualizes molecular graphs using NetworkX."""
 
@@ -22,10 +20,14 @@ class GraphVisualizer:
         Returns:
             Matplotlib figure object.
         """
+        try:
+            from peplab.visualization.cpk_colors import CPKColors
+        except ImportError:
+            print("Please install the peplab package to use CPK colors.")
+
         # Create NetworkX graph
         G = nx.Graph()
-        print(CPKColors)
-        print(CPKColors.get_color('C'))
+
         # Add nodes
         for node in graph_dict['nodes']:
             if node['element'] != 'H':  # Skip explicit hydrogens
