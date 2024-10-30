@@ -2,18 +2,16 @@ from typing import Tuple, Optional
 import matplotlib.pyplot as plt
 import networkx as nx
 
-from ..cpk_colors import CPKColors
+from peplab.visualization.cpk_colors import CPKColors
 
 class GraphVisualizer:
     """Visualizes molecular graphs using NetworkX."""
 
+    @staticmethod
     def create_graph_plot(
-        self,
         graph_dict: dict,
         size: Tuple[int, int] = (10, 10),
-        title: Optional[str] = None,
-        colors = CPKColors()
-    ) -> plt.Figure:
+        title: Optional[str] = None    ) -> plt.Figure:
         """Creates a plot of the molecular graph.
 
         Args:
@@ -39,7 +37,7 @@ class GraphVisualizer:
                 G.add_node(
                     node['id'],
                     label=label,
-                    color=colors.get_color(node['element']),
+                    color=CPKColors.get_color(node['element']),
                     is_reactive_nuc=node.get('is_reactive_nuc', False),
                     is_reactive_elec=node.get('is_reactive_elec', False)
                 )

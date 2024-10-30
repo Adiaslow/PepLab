@@ -52,7 +52,9 @@ __all__ = [
     'ReactivityProfile',
     'StructureGenerator',
 
-    # Utilities
-
+    # Visualization classes
+    'GraphVisualizer',
+    'RDKitVisualizer',
+    'CPKColors'
 ]
 """
