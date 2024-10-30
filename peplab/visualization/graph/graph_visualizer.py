@@ -26,7 +26,7 @@ class GraphVisualizer:
         """
         # Create NetworkX graph
         G = nx.Graph()
-
+        _cpk_colors = CPKColors()
         # Add nodes
         for node in graph_dict['nodes']:
             if node['element'] != 'H':  # Skip explicit hydrogens
@@ -39,7 +39,7 @@ class GraphVisualizer:
                 G.add_node(
                     node['id'],
                     label=label,
-                    color=CPKColors.get_color(node['element']),
+                    color=_cpk_colors.get_color(node['element']),
                     is_reactive_nuc=node.get('is_reactive_nuc', False),
                     is_reactive_elec=node.get('is_reactive_elec', False)
                 )
