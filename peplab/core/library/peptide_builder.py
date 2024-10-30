@@ -35,7 +35,7 @@ class PeptideBuilder:
             residue_options = []
 
             # Process each position
-            for pos in tqdm(positions):
+            for pos in positions:
                 pos_residues = []
                 for res_key, res_info in library_info.positions[pos].residues.items():
                     try:
@@ -63,7 +63,7 @@ class PeptideBuilder:
                 residue_options.append(pos_residues)
 
             # Generate combinations
-            for combo in product(*residue_options):
+            for combo in tqdm(product(*residue_options), desc="Generating peptides"):
                 total_attempts += 1
                 try:
                     residue_graphs = [res['graph'] for res in combo]
