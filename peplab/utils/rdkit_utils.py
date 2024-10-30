@@ -9,6 +9,7 @@ and extracting chemical information.
 from typing import Dict
 from rdkit import Chem
 
+
 class RDKitUtils:
     @staticmethod
     def get_atom_info(atom: Chem.Atom) -> Dict:

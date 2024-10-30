@@ -8,7 +8,6 @@ from dataclasses import dataclass
 import itertools
 from itertools import product
 import copy
-from tqdm import tqdm
 
 from ..graph.molecule_graph import MolecularGraph
 from ..molecule.atom import GraphNode
@@ -34,7 +33,7 @@ class PeptideBuilder:
             residue_options = []
 
             # Process each position
-            for pos in tqdm(positions, desc="Enumerating library", unit="position"):
+            for pos in positions:
                 pos_residues = []
                 for res_key, res_info in library_info.positions[pos].residues.items():
                     try:
