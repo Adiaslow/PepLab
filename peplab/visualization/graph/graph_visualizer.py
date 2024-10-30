@@ -11,7 +11,8 @@ class GraphVisualizer:
         self,
         graph_dict: dict,
         size: Tuple[int, int] = (10, 10),
-        title: Optional[str] = None
+        title: Optional[str] = None,
+        colors = CPKColors
     ) -> plt.Figure:
         """Creates a plot of the molecular graph.
 
@@ -38,7 +39,7 @@ class GraphVisualizer:
                 G.add_node(
                     node['id'],
                     label=label,
-                    color=CPKColors.get_color(node['element']),
+                    color=colors.get_color(node['element']),
                     is_reactive_nuc=node.get('is_reactive_nuc', False),
                     is_reactive_elec=node.get('is_reactive_elec', False)
                 )
