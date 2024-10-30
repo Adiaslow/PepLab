@@ -2,7 +2,6 @@ from typing import Tuple, Optional
 import matplotlib.pyplot as plt
 import networkx as nx
 
-from ..cpk_colors import CPKColors
 
 
 class GraphVisualizer:
@@ -24,6 +23,7 @@ class GraphVisualizer:
         Returns:
             Matplotlib figure object.
         """
+        from ..cpk_colors import CPKColors
         # Create NetworkX graph
         G = nx.Graph()
         _cpk_colors = CPKColors()
