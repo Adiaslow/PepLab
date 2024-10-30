@@ -37,7 +37,8 @@ class PeptideBuilder:
                 pos_residues = []
                 for res_key, res_info in library_info.positions[pos].residues.items():
                     try:
-                        graph = MolecularGraph.from_smiles(res_info.smiles)
+                        graph = MolecularGraph()
+                        graph = graph.from_smiles(res_info.smiles)
                         graph.find_reactive_sites(
                             res_info.nucleophile,
                             res_info.electrophile

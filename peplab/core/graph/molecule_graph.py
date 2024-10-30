@@ -56,7 +56,7 @@ class MolecularGraph:
                     stereo=str(bond.GetStereo())
                 )
                 graph.edges.append(edge)
-            logger.info(f"Created molecular graph from SMILES: {smiles}")
+            print(f"Created molecular graph from SMILES: {smiles}")
             return graph
         except Exception as e:
             raise ValueError(f"Error creating molecular graph from SMILES: {str(e)}")
