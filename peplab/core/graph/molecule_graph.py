@@ -14,6 +14,7 @@ class MolecularGraph:
     @staticmethod
     def from_smiles(smiles: str) -> 'MolecularGraph':
         """Create molecular graph from SMILES."""
+
         graph = MolecularGraph()
         try:
             mol = Chem.MolFromSmiles(smiles)
