@@ -46,6 +46,7 @@ class PeptideAnalyzer:
         }
 
         # Generate SMILES
+        print(peptide)
         smiles, success = self.smiles_generator.generate(peptide.graph)
         results['smiles'] = smiles if success else None
 
