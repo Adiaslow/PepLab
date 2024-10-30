@@ -1,5 +1,6 @@
 class CPKColors:
     """CPK coloring scheme for atoms."""
+
     COLORS = {
         'H': '#FFFFFF',   # White
         'He': '#D9FFFF',  # Light cyan
@@ -111,7 +112,7 @@ class CPKColors:
         'Hs': '#E6002E',  # Dark pink
         'Mt': '#EB0026',  # Dark pink
     }
-    @classmethod
-    def get_color(cls, element: str) -> str:
+
+    def get_color(self, cls, element: str) -> str:
         """Gets the CPK color for an element."""
         return cls.COLORS.get(element, '#808080')  # Default to grey
