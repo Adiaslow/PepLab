@@ -1,72 +1,100 @@
-"""Command-line interface for peptide library generation."""
+#!/usr/bin/env python3
 
 import argparse
+import json
+import logging
+import sys
+from pathlib import Path
 
-from ..core.library.peptide_library_generator import PeptideLibraryGenerator
+import pandas as pd
+from peplab.core.library.peptide_library_generator import PeptideLibraryGenerator
 
-parser = argparse.ArgumentParser(
-    description="Generate and analyze peptide libraries"
-)
-
-parser.add_argument(
-    'input_path',
-    type=str,
-    help="Path to input library file (CSV or JSON)"
-)
-
-parser.add_argument(
-    '-o', '--output-dir',
-    type=str,
-    default='output',
-    help="Directory for output files"
-)
-
-parser.add_argument(
-    '--cyclize',
-    action='store_true',
-    help="Generate cyclic peptides"
-)
-
-parser.add_argument(
-    '--no-visualization',
-    action='store_true',
-    help="Skip visualization generation"
-)
-
-parser.add_argument(
-    '--no-analysis',
-    action='store_true',
-    help="Skip property analysis"
-)
-
-parser.add_argument(
-    '--save-intermediates',
-    action='store_true',
-    help="Save intermediate structures"
-)
-
-args = parser.parse_args()
-
-try:
-    # Initialize generator
-    generator = PeptideLibraryGenerator(
-        input_path=args.input_path,
-        output_dir=args.output_dir
+def setup_logging(level=logging.INFO):
+    """Configure logging for the script."""
+    logging.basicConfig(
+        level=level,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.StreamHandler(sys.stdout),
+            logging.FileHandler('peptide_library_generation.log')
+        ]
     )
+    return logging.getLogger('peptide-library-generator')
 
-    # Generate peptides
-    peptides = generator.generate_peptides(
-        cyclize=args.cyclize,
-        save_intermediates=args.save_intermediates
+def parse_args():
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(description='Generate combinatorial peptide libraries')
+    parser.add_argument(
+        '--input', '-i',
+        required=True,
+        type=Path,
+        help='Input library file path (CSV or JSON)'
     )
+    parser.add_argument(
+        '--config', '-c',
+        required=True,
+        type=Path,
+        help='Configuration JSON file path'
+    )
+    parser.add_argument(
+        '--verbose', '-v',
+        action='store_true',
+        help='Enable verbose logging'
+    )
+    return parser.parse_args()
 
-    # Analyze peptides
-    if not args.no_analysis:
-        generator.analyze_peptides(peptides)
+def load_config(config_path):
+    """Load configuration from JSON file."""
+    with open(config_path) as f:
+        return json.load(f)
 
-    # Generate visualizations
-    if not args.no_visualization:
-        generator.visualize_peptides(peptides)
+def main():
+    args = parse_args()
+    logger = setup_logging(level=logging.DEBUG if args.verbose else logging.INFO)
+    
+    try:
+        # Load configuration
+        logger.info(f"Loading configuration from {args.config}")
+        config = load_config(args.config)
+        
+        # Configure property calculations
+        property_config = {
+            'alogp': config.get('calc_alogp', True),
+            'exact_mass': config.get('calc_exact_mass', True),
+            'rotatable_bonds': config.get('calc_rotatable_bonds', True),
+            'hbd_count': config.get('calc_hbd_count', True),
+            'hba_count': config.get('calc_hba_count', True)
+        }
+        
+        # Initialize generator
+        logger.info(f"Initializing peptide library generator with input file: {args.input}")
+        generator = PeptideLibraryGenerator(
+            input_path=str(args.input),
+            property_config=property_config
+        )
+        
+        # Generate peptides
+        logger.info("Generating peptide library...")
+        peptides = generator.generate_peptides(
+            cyclize=(config.get('peptide_type', 'linear') == 'cyclic')
+        )
+        
+        # Analyze peptides
+        logger.info("Analyzing peptide properties...")
+        results = generator.analyze_peptides(peptides)
+        
+        # Save results
+        output_file = 'library.csv'
+        logger.info(f"Saving peptide library to {output_file}")
+        results['dataframe'].to_csv(output_file, index=False)
+        
+        # Log summary
+        logger.info("Peptide Library Generation Summary:")
+        logger.info(results['summary'])
+        
+    except Exception as e:
+        logger.error(f"Error during peptide library generation: {str(e)}", exc_info=True)
+        sys.exit(1)
 
-except Exception as e:
-    print(f"Error: {str(e)}")
+if __name__ == '__main__':
+    main()
