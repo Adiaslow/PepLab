@@ -3,7 +3,7 @@ from pathlib import Path
 from rdkit import Chem
 from rdkit.Chem import AllChem, Draw
 
-from peplab.utils.rdkit_utils import graph_dict_to_mol
+from peplab.utils.rdkit_utils import RDKitUtils
 
 class RDKitVisualizer:
     """Visualizes molecules using RDKit's 2D drawing capabilities."""
@@ -16,7 +16,7 @@ class RDKitVisualizer:
         fmt: str = 'svg'
     ) -> Tuple[Union[str, bytes], Optional[str]]:
         """Creates a 2D depiction of a molecule."""
-        mol = graph_dict_to_mol(graph_dict)
+        mol = RDKitUtils.graph_dict_to_mol(graph_dict)
         AllChem.Compute2DCoords(mol)
 
         if fmt.lower() == 'svg':

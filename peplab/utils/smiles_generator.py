@@ -1,7 +1,7 @@
 from typing import Dict, Optional, Tuple
 from rdkit import Chem
 
-from peplab.utils.rdkit_utils import graph_dict_to_mol
+from peplab.utils.rdkit_utils import RDKitUtils
 
 class SMILESGenerator:
     """Generates SMILES strings from molecular graphs."""
@@ -21,7 +21,7 @@ class SMILESGenerator:
             Tuple of (SMILES string or None, success boolean).
         """
         try:
-            mol = graph_dict_to_mol(graph_dict)
+            mol = RDKitUtils.graph_dict_to_mol(graph_dict)
             if mol is None:
                 return None, False
 
