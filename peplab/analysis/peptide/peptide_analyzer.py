@@ -19,7 +19,6 @@ class PeptideAnalyzer:
         """
         self.property_config = property_config
         self.smiles_generator = SMILESGenerator()
-        print(self.smiles_generator)
         self.calculators = {}
 
         # Initialize calculators based on config
