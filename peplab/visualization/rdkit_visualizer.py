@@ -3,6 +3,7 @@ from pathlib import Path
 from rdkit import Chem
 from rdkit.Chem import AllChem, Draw
 
+from peplab.utils.rdkit_utils import graph_dict_to_mol
 
 class RDKitVisualizer:
     """Visualizes molecules using RDKit's 2D drawing capabilities."""
