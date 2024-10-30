@@ -2,13 +2,13 @@ from typing import Tuple, Optional
 import matplotlib.pyplot as plt
 import networkx as nx
 
-
+from ..cpk_colors import CPKColors
 
 class GraphVisualizer:
     """Visualizes molecular graphs using NetworkX."""
 
-    @staticmethod
     def create_graph_plot(
+        self,
         graph_dict: dict,
         size: Tuple[int, int] = (10, 10),
         title: Optional[str] = None
@@ -23,7 +23,6 @@ class GraphVisualizer:
         Returns:
             Matplotlib figure object.
         """
-        from ..cpk_colors import CPKColors
         # Create NetworkX graph
         G = nx.Graph()
         _cpk_colors = CPKColors()
