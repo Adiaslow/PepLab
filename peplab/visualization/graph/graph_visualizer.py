@@ -12,7 +12,7 @@ class GraphVisualizer:
         graph_dict: dict,
         size: Tuple[int, int] = (10, 10),
         title: Optional[str] = None,
-        colors = CPKColors
+        colors = CPKColors()
     ) -> plt.Figure:
         """Creates a plot of the molecular graph.
 
