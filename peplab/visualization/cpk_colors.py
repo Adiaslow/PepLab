@@ -112,7 +112,7 @@ class CPKColors:
         'Hs': '#E6002E',  # Dark pink
         'Mt': '#EB0026',  # Dark pink
     }
-
-    def get_color(self, cls, element: str) -> str:
+    @classmethod
+    def get_color(cls, element: str) -> str:
         """Gets the CPK color for an element."""
         return cls.COLORS.get(element, '#808080')  # Default to grey
