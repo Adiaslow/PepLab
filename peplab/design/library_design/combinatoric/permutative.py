@@ -8,7 +8,7 @@ class Permutation:
         Generates all possible permutations of items, where order matters.
 
         Parameters:
-        - items: List of items to permute.
+        - items: List of items to permute (single set)
 
         Returns:
         - List of lists, each representing a unique permutation.
