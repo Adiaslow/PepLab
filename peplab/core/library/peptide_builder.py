@@ -275,7 +275,55 @@ class PeptideBuilder:
 
     def click_cyclize_peptide(self, linear_peptide: MolecularGraph) -> MolecularGraph:
         """Form 1,4-disubstituted 1,2,3-triazole ring via click chemistry."""
-        # [Previous code for finding reactive sites and connection points stays the same until node creation]
+        # Find reactive sites
+        azide_site = next((n for n in linear_peptide.nodes if n.is_reactive_nuc), None)
+        alkyne_site = next((n for n in linear_peptide.nodes if n.is_reactive_elec), None)
+
+        if not azide_site or not alkyne_site:
+            raise ValueError("Cannot find required reactive sites")
+
+        # Start with a fresh graph
+        cyclic = MolecularGraph()
+        cyclic.nodes = []
+        cyclic.edges = []
+
+        # Add just the peptide backbone nodes
+        for node in linear_peptide.nodes:
+            if not (node.is_reactive_nuc or node.is_reactive_elec):
+                cyclic.nodes.append(copy.deepcopy(node))
+
+        # Add peptide backbone edges
+        for edge in linear_peptide.edges:
+            if not any(n.is_reactive_nuc or n.is_reactive_elec
+                      for n in linear_peptide.nodes
+                      if n.id in [edge.from_idx, edge.to_idx]):
+                cyclic.edges.append(copy.deepcopy(edge))
+
+        # Find CH2 connection points
+        azide_connection = None
+        alkyne_connection = None
+
+        for edge in linear_peptide.edges:
+            if edge.from_idx == azide_site.id:
+                node = next(n for n in linear_peptide.nodes if n.id == edge.to_idx)
+                if node.element == 'C' and node.num_explicit_hs == 2:
+                    azide_connection = node.id
+            elif edge.to_idx == azide_site.id:
+                node = next(n for n in linear_peptide.nodes if n.id == edge.from_idx)
+                if node.element == 'C' and node.num_explicit_hs == 2:
+                    azide_connection = node.id
+
+            if edge.from_idx == alkyne_site.id:
+                node = next(n for n in linear_peptide.nodes if n.id == edge.to_idx)
+                if node.element == 'C' and node.num_explicit_hs == 2:
+                    alkyne_connection = node.id
+            elif edge.to_idx == alkyne_site.id:
+                node = next(n for n in linear_peptide.nodes if n.id == edge.from_idx)
+                if node.element == 'C' and node.num_explicit_hs == 2:
+                    alkyne_connection = node.id
+
+        if not azide_connection or not alkyne_connection:
+            raise ValueError("Cannot find CH2 connection points")
 
         # Create new atoms for 1,4-disubstituted 1,2,3-triazole
         max_id = max(n.id for n in cyclic.nodes)
@@ -286,14 +334,14 @@ class PeptideBuilder:
             element='N',
             atomic_num=7,
             formal_charge=0,
-            implicit_valence=2,  # Two single bonds
-            explicit_valence=2,
+            implicit_valence=3,  # Three single bonds
+            explicit_valence=3,
             aromatic=True,
             hybridization='SP2',
             num_explicit_hs=0,
             num_implicit_hs=0,
             total_num_hs=0,
-            degree=2,  # One ring bond + one chain bond
+            degree=3,  # Two ring bonds + chain bond
             in_ring=True
         )
 
@@ -337,14 +385,14 @@ class PeptideBuilder:
             element='C',
             atomic_num=6,
             formal_charge=0,
-            implicit_valence=3,  # Two single bonds + CH2 connection
-            explicit_valence=3,
+            implicit_valence=4,  # Three single bonds + one double bond
+            explicit_valence=4,
             aromatic=True,
             hybridization='SP2',
             num_explicit_hs=0,
             num_implicit_hs=0,
             total_num_hs=0,
-            degree=3,  # Two ring bonds + one chain bond
+            degree=3,  # Two ring bonds + chain bond
             in_ring=True
         )
 
@@ -354,8 +402,8 @@ class PeptideBuilder:
             element='C',
             atomic_num=6,
             formal_charge=0,
-            implicit_valence=3,  # One single bond + one double bond + one H
-            explicit_valence=3,
+            implicit_valence=4,  # Two bonds + H
+            explicit_valence=4,
             aromatic=True,
             hybridization='SP2',
             num_explicit_hs=1,
