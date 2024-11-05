@@ -290,7 +290,7 @@ class PeptideBuilder:
         azide_connection = None
         alkyne_connection = None
 
-        # Find peptide connection points and groups to remove
+        # Find peptide connection points
         for edge in cyclic.edges:
             if edge.from_idx == azide_site.id:
                 node = next(n for n in cyclic.nodes if n.id == edge.to_idx)
@@ -351,14 +351,14 @@ class PeptideBuilder:
             element='N',
             atomic_num=7,
             formal_charge=0,
-            implicit_valence=2,
-            explicit_valence=2,
-            aromatic=False,  # Changed to false since we're using explicit double bonds
+            implicit_valence=3,  # Changed to 3
+            explicit_valence=3,  # Changed to 3
+            aromatic=False,
             hybridization='SP2',
             num_explicit_hs=0,
             num_implicit_hs=0,
             total_num_hs=0,
-            degree=2,
+            degree=2,  # Will have two bonds
             in_ring=True
         )
 
@@ -367,31 +367,31 @@ class PeptideBuilder:
             element='N',
             atomic_num=7,
             formal_charge=0,
-            implicit_valence=2,
-            explicit_valence=2,
-            aromatic=False,  # Changed to false since we're using explicit double bonds
+            implicit_valence=3,  # Changed to 3
+            explicit_valence=3,  # Changed to 3
+            aromatic=False,
             hybridization='SP2',
             num_explicit_hs=0,
             num_implicit_hs=0,
             total_num_hs=0,
-            degree=2,
+            degree=2,  # Will have two bonds
             in_ring=True
         )
 
-        # Create the second carbon (C4, which will form C4=C5 with the alkyne carbon)
+        # Create C4 (will form double bond with C5)
         c4 = GraphNode(
             id=max_id + 3,
             element='C',
             atomic_num=6,
             formal_charge=0,
-            implicit_valence=3,
-            explicit_valence=3,
-            aromatic=False,  # Changed to false since we're using explicit double bonds
+            implicit_valence=4,
+            explicit_valence=4,
+            aromatic=False,
             hybridization='SP2',
-            num_explicit_hs=0,
-            num_implicit_hs=0,
-            total_num_hs=0,
-            degree=2,
+            num_explicit_hs=1,  # Add one H since it only has two ring bonds
+            num_implicit_hs=1,
+            total_num_hs=1,
+            degree=2,  # Two ring bonds
             in_ring=True
         )
 
@@ -402,14 +402,14 @@ class PeptideBuilder:
                 node.element = 'N'
                 node.atomic_num = 7
                 node.formal_charge = 0
-                node.implicit_valence = 2
-                node.explicit_valence = 2
-                node.aromatic = False  # Changed to false since we're using explicit double bonds
+                node.implicit_valence = 3  # Changed to 3
+                node.explicit_valence = 3  # Changed to 3
+                node.aromatic = False
                 node.hybridization = 'SP2'
                 node.num_explicit_hs = 0
                 node.num_implicit_hs = 0
                 node.total_num_hs = 0
-                node.degree = 2
+                node.degree = 2  # Will have two bonds
                 node.in_ring = True
 
         # Update alkyne site to C5
@@ -419,20 +419,20 @@ class PeptideBuilder:
                 node.element = 'C'
                 node.atomic_num = 6
                 node.formal_charge = 0
-                node.implicit_valence = 3
-                node.explicit_valence = 3
-                node.aromatic = False  # Changed to false since we're using explicit double bonds
+                node.implicit_valence = 4
+                node.explicit_valence = 4
+                node.aromatic = False
                 node.hybridization = 'SP2'
                 node.num_explicit_hs = 0
                 node.num_implicit_hs = 0
                 node.total_num_hs = 0
-                node.degree = 2
+                node.degree = 3  # Will have three bonds (two ring bonds + peptide connection)
                 node.in_ring = True
 
         # Add new atoms
         cyclic.nodes.extend([n2, n3, c4])
 
-        # Create triazole ring bonds with correct single/double bond pattern
+        # Create triazole ring bonds with correct double bond pattern
         triazole_bonds = [
             # N1-N2 (single)
             GraphEdge(
