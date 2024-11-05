@@ -274,7 +274,7 @@ class PeptideBuilder:
         return has_azide and has_alkyne
 
     def click_cyclize_peptide(self, linear_peptide: MolecularGraph) -> MolecularGraph:
-        """Perform click chemistry cyclization between azide and alkyne groups."""
+        """Perform click chemistry cyclization between azide and alkyne groups with correct valence."""
         azide_sites = []
         alkyne_sites = []
 
@@ -284,67 +284,51 @@ class PeptideBuilder:
             if node.is_reactive_elec:  # Alkyne C
                 alkyne_sites.append(node)
 
-        if not azide_sites:
-            raise ValueError("Cannot find azide group in peptide")
-        if not alkyne_sites:
-            raise ValueError("Cannot find alkyne group in peptide")
+        if not azide_sites or not alkyne_sites:
+            raise ValueError("Cannot find required azide and alkyne groups")
 
         azide_site = azide_sites[0]
         alkyne_site = alkyne_sites[0]
         cyclic = copy.deepcopy(linear_peptide)
 
-        # Clean up alkyne group first
-        alkyne_triple_bond = None
-        alkyne_partner = None
-        for edge in cyclic.edges:
-            if edge.bond_type == 'TRIPLE' and (edge.from_idx == alkyne_site.id or edge.to_idx == alkyne_site.id):
-                alkyne_triple_bond = edge
-                alkyne_partner = edge.to_idx if edge.from_idx == alkyne_site.id else edge.from_idx
-                break
+        # Step 1: Clean up alkyne group
+        alkyne_chain = self._get_alkyne_chain(cyclic, alkyne_site.id)
+        if len(alkyne_chain) != 2:
+            raise ValueError("Invalid alkyne group structure")
 
-        if alkyne_triple_bond and alkyne_partner is not None:
-            cyclic.edges = [e for e in cyclic.edges if e != alkyne_triple_bond]
-            cyclic.nodes = [n for n in cyclic.nodes if n.id != alkyne_partner]
-            cyclic.edges = [e for e in cyclic.edges if e.from_idx != alkyne_partner and e.to_idx != alkyne_partner]
+        terminal_alkyne = alkyne_chain[1]  # The terminal carbon of alkyne
 
-        # Clean up azide group
-        azide_chain = []
-        current_id = azide_site.id
-        visited = {current_id}
+        # Remove triple bond and terminal carbon
+        cyclic.edges = [e for e in cyclic.edges if not (
+            (e.from_idx == alkyne_site.id and e.to_idx == terminal_alkyne.id) or
+            (e.from_idx == terminal_alkyne.id and e.to_idx == alkyne_site.id)
+        )]
+        cyclic.nodes = [n for n in cyclic.nodes if n.id != terminal_alkyne.id]
 
-        # Find the N-N-N chain
-        while True:
-            next_n = None
-            for edge in cyclic.edges:
-                if edge.from_idx == current_id or edge.to_idx == current_id:
-                    other_id = edge.to_idx if edge.from_idx == current_id else edge.from_idx
-                    node = next((n for n in cyclic.nodes if n.id == other_id), None)
-                    if node and node.element == 'N' and node.id not in visited:
-                        next_n = node
-                        visited.add(node.id)
-                        current_id = node.id
-                        azide_chain.append(node)
-                        break
-            if not next_n:
-                break
+        # Step 2: Clean up azide group
+        azide_chain = self._get_azide_chain(cyclic, azide_site.id)
+        if len(azide_chain) != 3:
+            raise ValueError("Invalid azide group structure")
 
         # Remove N2 and N3 from azide
-        for node in azide_chain:
-            cyclic.nodes = [n for n in cyclic.nodes if n.id != node.id]
-            cyclic.edges = [e for e in cyclic.edges if e.from_idx != node.id and e.to_idx != node.id]
+        n2, n3 = azide_chain[1], azide_chain[2]
+        cyclic.nodes = [n for n in cyclic.nodes if n.id not in (n2.id, n3.id)]
+        cyclic.edges = [e for e in cyclic.edges if not (
+            e.from_idx in (n2.id, n3.id) or e.to_idx in (n2.id, n3.id)
+        )]
 
-        # Create 1,2,3-triazole ring
+        # Step 3: Create triazole ring with correct valence
         max_id = max(n.id for n in cyclic.nodes)
 
-        # Create two new ring nitrogens
+        # Create two new ring nitrogens with correct valence and hybridization
         n1 = GraphNode(
             id=max_id + 1,
             element='N',
             atomic_num=7,
             formal_charge=0,
-            implicit_valence=2,
-            explicit_valence=2,
-            aromatic=False,  # Will be set to true after all bonds are formed
+            implicit_valence=3,  # Corrected valence for sp2 nitrogen
+            explicit_valence=3,
+            aromatic=True,
             hybridization='SP2',
             num_explicit_hs=0,
             num_implicit_hs=0,
@@ -360,9 +344,9 @@ class PeptideBuilder:
             element='N',
             atomic_num=7,
             formal_charge=0,
-            implicit_valence=2,
-            explicit_valence=2,
-            aromatic=False,  # Will be set to true after all bonds are formed
+            implicit_valence=3,  # Corrected valence for sp2 nitrogen
+            explicit_valence=3,
+            aromatic=True,
             hybridization='SP2',
             num_explicit_hs=0,
             num_implicit_hs=0,
@@ -375,44 +359,40 @@ class PeptideBuilder:
 
         cyclic.nodes.extend([n1, n2])
 
-        # Form the triazole ring with a valid Kekulé structure
+        # Form aromatic triazole ring with correct bond orders
         ring_bonds = [
-            # Single bond between first azide N and alkyne C
             GraphEdge(
                 from_idx=azide_site.id,
                 to_idx=alkyne_site.id,
                 bond_type='SINGLE',
-                is_aromatic=False,
+                is_aromatic=True,
                 is_conjugated=True,
                 in_ring=True,
                 stereo='NONE'
             ),
-            # Double bond between alkyne C and first new N
             GraphEdge(
                 from_idx=alkyne_site.id,
                 to_idx=n1.id,
-                bond_type='DOUBLE',
-                is_aromatic=False,
+                bond_type='SINGLE',
+                is_aromatic=True,
                 is_conjugated=True,
                 in_ring=True,
                 stereo='NONE'
             ),
-            # Single bond between two new N atoms
             GraphEdge(
                 from_idx=n1.id,
                 to_idx=n2.id,
-                bond_type='SINGLE',
-                is_aromatic=False,
+                bond_type='DOUBLE',
+                is_aromatic=True,
                 is_conjugated=True,
                 in_ring=True,
                 stereo='NONE'
             ),
-            # Double bond back to first azide N
             GraphEdge(
                 from_idx=n2.id,
                 to_idx=azide_site.id,
-                bond_type='DOUBLE',
-                is_aromatic=False,
+                bond_type='SINGLE',
+                is_aromatic=True,
                 is_conjugated=True,
                 in_ring=True,
                 stereo='NONE'
@@ -425,22 +405,22 @@ class PeptideBuilder:
         for node in cyclic.nodes:
             if node.id == azide_site.id:
                 node.is_reactive_nuc = False
-                node.aromatic = False
+                node.aromatic = True
                 node.hybridization = 'SP2'
-                node.degree = 3
+                node.degree = 2
                 node.in_ring = True
-                node.explicit_valence = 3
+                node.explicit_valence = 3  # Corrected valence
                 node.implicit_valence = 3
                 node.num_explicit_hs = 0
                 node.num_implicit_hs = 0
                 node.total_num_hs = 0
             elif node.id == alkyne_site.id:
                 node.is_reactive_elec = False
-                node.aromatic = False
+                node.aromatic = True
                 node.hybridization = 'SP2'
-                node.degree = 3
+                node.degree = 2
                 node.in_ring = True
-                node.explicit_valence = 3
+                node.explicit_valence = 3  # Corrected valence
                 node.implicit_valence = 3
                 node.num_explicit_hs = 0
                 node.num_implicit_hs = 0
@@ -448,15 +428,41 @@ class PeptideBuilder:
 
         return self._reindex_graph(cyclic)
 
+    def _get_azide_chain(self, graph: MolecularGraph, start_id: int) -> List[GraphNode]:
+        """Get the complete azide chain starting from the first nitrogen."""
+        chain = [next(n for n in graph.nodes if n.id == start_id)]
+        current_id = start_id
+        visited = {current_id}
+
+        while True:
+            next_n = None
+            for edge in graph.edges:
+                if edge.from_idx == current_id or edge.to_idx == current_id:
+                    other_id = edge.to_idx if edge.from_idx == current_id else edge.from_idx
+                    node = next((n for n in graph.nodes if n.id == other_id), None)
+                    if node and node.element == 'N' and node.id not in visited:
+                        next_n = node
+                        chain.append(node)
+                        visited.add(node.id)
+                        current_id = node.id
+                        break
+            if not next_n:
+                break
+
+        return chain
+
     def _get_alkyne_chain(self, graph: MolecularGraph, start_id: int) -> List[GraphNode]:
-        """Get the chain of carbon atoms in an alkyne group."""
+        """Get the complete alkyne chain starting from the first carbon."""
         chain = [next(n for n in graph.nodes if n.id == start_id)]
 
-        # Find connected carbon through triple bond
-        for neighbor, edge in graph.get_neighbors(start_id):
-            if neighbor.element == 'C' and edge.bond_type == 'TRIPLE':
-                chain.append(neighbor)
-                break
+        # Find the carbon connected by triple bond
+        for edge in graph.edges:
+            if edge.bond_type == 'TRIPLE' and (edge.from_idx == start_id or edge.to_idx == start_id):
+                other_id = edge.to_idx if edge.from_idx == start_id else edge.from_idx
+                other_node = next((n for n in graph.nodes if n.id == other_id), None)
+                if other_node and other_node.element == 'C':
+                    chain.append(other_node)
+                    break
 
         return chain
 
