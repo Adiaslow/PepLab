@@ -268,10 +268,10 @@ class PeptideBuilder:
         return mod_graph
 
     def _has_click_pairs(self, combo: tuple) -> bool:
-            """Check if the combination has matching azide and alkyne pairs."""
-            has_azide = any(res.get('nuc') == 'N3' or res.get('elec') == 'N3' for res in combo)
-            has_alkyne = any(res.get('nuc') == 'C#C' or res.get('elec') == 'C#C' for res in combo)
-            return has_azide and has_alkyne
+        """Check if the combination has matching azide and alkyne pairs."""
+        has_azide = any(res.get('nuc') == 'N3' or res.get('elec') == 'N3' for res in combo)
+        has_alkyne = any(res.get('nuc') == 'C#C' or res.get('elec') == 'C#C' for res in combo)
+        return has_azide and has_alkyne
 
     def click_cyclize_peptide(self, linear_peptide: MolecularGraph) -> MolecularGraph:
         """Perform click chemistry cyclization between azide and alkyne groups."""
@@ -289,7 +289,6 @@ class PeptideBuilder:
             raise ValueError("Cannot find azide and alkyne sites for click chemistry")
 
         # For simplicity, use the first pair found
-        # Could be extended to handle multiple pairs or choose optimal pairs
         azide_site = azide_sites[0]
         alkyne_site = alkyne_sites[0]
 
@@ -311,15 +310,39 @@ class PeptideBuilder:
         n2_id = max_id + 2
 
         new_nodes.extend([
-            GraphNode(id=n1_id, element='N', charge=0, is_aromatic=True),
-            GraphNode(id=n2_id, element='N', charge=0, is_aromatic=True)
+            GraphNode(id=n1_id, element='N', is_aromatic=True),
+            GraphNode(id=n2_id, element='N', is_aromatic=True)
         ])
 
         # Create bonds to form the triazole ring
         new_edges.extend([
-            GraphEdge(from_idx=azide_site.id, to_idx=n1_id, bond_type='DOUBLE', is_aromatic=True, in_ring=True),
-            GraphEdge(from_idx=n1_id, to_idx=n2_id, bond_type='SINGLE', is_aromatic=True, in_ring=True),
-            GraphEdge(from_idx=n2_id, to_idx=alkyne_site.id, bond_type='DOUBLE', is_aromatic=True, in_ring=True)
+            GraphEdge(
+                from_idx=azide_site.id,
+                to_idx=n1_id,
+                bond_type='DOUBLE',
+                is_aromatic=True,
+                is_conjugated=True,
+                in_ring=True,
+                stereo='NONE'
+            ),
+            GraphEdge(
+                from_idx=n1_id,
+                to_idx=n2_id,
+                bond_type='SINGLE',
+                is_aromatic=True,
+                is_conjugated=True,
+                in_ring=True,
+                stereo='NONE'
+            ),
+            GraphEdge(
+                from_idx=n2_id,
+                to_idx=alkyne_site.id,
+                bond_type='DOUBLE',
+                is_aromatic=True,
+                is_conjugated=True,
+                in_ring=True,
+                stereo='NONE'
+            )
         ])
 
         cyclic.nodes.extend(new_nodes)
@@ -384,29 +407,29 @@ class PeptideBuilder:
         return node_connections <= 2 or other_connections <= 2
 
     def _get_connected_atoms(self, node_id: int, graph: MolecularGraph) -> List[GraphNode]:
-            """Get all atoms connected to the given node."""
-            connected = []
-            for edge in graph.edges:
-                if edge.from_idx == node_id:
-                    connected.append(next(n for n in graph.nodes if n.id == edge.to_idx))
-                elif edge.to_idx == node_id:
-                    connected.append(next(n for n in graph.nodes if n.id == edge.from_idx))
-            return connected
+        """Get all atoms connected to the given node."""
+        connected = []
+        for edge in graph.edges:
+            if edge.from_idx == node_id:
+                connected.append(next(n for n in graph.nodes if n.id == edge.to_idx))
+            elif edge.to_idx == node_id:
+                connected.append(next(n for n in graph.nodes if n.id == edge.from_idx))
+        return connected
 
     def _get_azide_nitrogens(self, graph: MolecularGraph, start_nitrogen_id: int) -> List[GraphNode]:
-            """Get all nitrogen atoms in an azide group starting from the first nitrogen."""
-            nitrogens = [next(n for n in graph.nodes if n.id == start_nitrogen_id)]
-            current = nitrogens[0]
+        """Get all nitrogen atoms in an azide group starting from the first nitrogen."""
+        nitrogens = [next(n for n in graph.nodes if n.id == start_nitrogen_id)]
+        current = nitrogens[0]
 
-            while True:
-                connected = self._get_connected_atoms(current.id, graph)
-                next_n = next((n for n in connected if n.element == 'N' and n not in nitrogens), None)
-                if not next_n:
-                    break
-                nitrogens.append(next_n)
-                current = next_n
+        while True:
+            connected = self._get_connected_atoms(current.id, graph)
+            next_n = next((n for n in connected if n.element == 'N' and n not in nitrogens), None)
+            if not next_n:
+                break
+            nitrogens.append(next_n)
+            current = next_n
 
-            return nitrogens
+        return nitrogens
 
     def cyclize_peptide(self, linear_peptide: MolecularGraph) -> MolecularGraph:
         """Cyclize linear peptide."""
