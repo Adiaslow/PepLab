@@ -273,115 +273,115 @@ class PeptideBuilder:
             has_alkyne = any(res.get('nuc') == 'C#C' or res.get('elec') == 'C#C' for res in combo)
             return has_azide and has_alkyne
 
-        def click_cyclize_peptide(self, linear_peptide: MolecularGraph) -> MolecularGraph:
-            """Perform click chemistry cyclization between azide and alkyne groups."""
-            # Find all azide and alkyne sites
-            azide_sites = []
-            alkyne_sites = []
+    def click_cyclize_peptide(self, linear_peptide: MolecularGraph) -> MolecularGraph:
+        """Perform click chemistry cyclization between azide and alkyne groups."""
+        # Find all azide and alkyne sites
+        azide_sites = []
+        alkyne_sites = []
 
-            for node in linear_peptide.nodes:
-                if self._is_azide_nitrogen(node, linear_peptide):
-                    azide_sites.append(node)
-                elif self._is_alkyne_carbon(node, linear_peptide):
-                    alkyne_sites.append(node)
+        for node in linear_peptide.nodes:
+            if self._is_azide_nitrogen(node, linear_peptide):
+                azide_sites.append(node)
+            elif self._is_alkyne_carbon(node, linear_peptide):
+                alkyne_sites.append(node)
 
-            if not (azide_sites and alkyne_sites):
-                raise ValueError("Cannot find azide and alkyne sites for click chemistry")
+        if not (azide_sites and alkyne_sites):
+            raise ValueError("Cannot find azide and alkyne sites for click chemistry")
 
-            # For simplicity, use the first pair found
-            # Could be extended to handle multiple pairs or choose optimal pairs
-            azide_site = azide_sites[0]
-            alkyne_site = alkyne_sites[0]
+        # For simplicity, use the first pair found
+        # Could be extended to handle multiple pairs or choose optimal pairs
+        azide_site = azide_sites[0]
+        alkyne_site = alkyne_sites[0]
 
-            cyclic = copy.deepcopy(linear_peptide)
+        cyclic = copy.deepcopy(linear_peptide)
 
-            # Remove terminal nitrogen atoms from azide group
-            azide_nitrogens = self._get_azide_nitrogens(cyclic, azide_site.id)
-            for n in azide_nitrogens[1:]:  # Keep the first nitrogen
-                cyclic.nodes = [node for node in cyclic.nodes if node.id != n.id]
-                cyclic.edges = [edge for edge in cyclic.edges if edge.from_idx != n.id and edge.to_idx != n.id]
+        # Remove terminal nitrogen atoms from azide group
+        azide_nitrogens = self._get_azide_nitrogens(cyclic, azide_site.id)
+        for n in azide_nitrogens[1:]:  # Keep the first nitrogen
+            cyclic.nodes = [node for node in cyclic.nodes if node.id != n.id]
+            cyclic.edges = [edge for edge in cyclic.edges if edge.from_idx != n.id and edge.to_idx != n.id]
 
-            # Create triazole ring
-            max_id = max(n.id for n in cyclic.nodes)
-            new_nodes = []
-            new_edges = []
+        # Create triazole ring
+        max_id = max(n.id for n in cyclic.nodes)
+        new_nodes = []
+        new_edges = []
 
-            # Add two new nitrogen atoms to complete the triazole ring
-            n1_id = max_id + 1
-            n2_id = max_id + 2
+        # Add two new nitrogen atoms to complete the triazole ring
+        n1_id = max_id + 1
+        n2_id = max_id + 2
 
-            new_nodes.extend([
-                GraphNode(id=n1_id, element='N', charge=0, is_aromatic=True),
-                GraphNode(id=n2_id, element='N', charge=0, is_aromatic=True)
-            ])
+        new_nodes.extend([
+            GraphNode(id=n1_id, element='N', charge=0, is_aromatic=True),
+            GraphNode(id=n2_id, element='N', charge=0, is_aromatic=True)
+        ])
 
-            # Create bonds to form the triazole ring
-            new_edges.extend([
-                GraphEdge(from_idx=azide_site.id, to_idx=n1_id, bond_type='DOUBLE', is_aromatic=True, in_ring=True),
-                GraphEdge(from_idx=n1_id, to_idx=n2_id, bond_type='SINGLE', is_aromatic=True, in_ring=True),
-                GraphEdge(from_idx=n2_id, to_idx=alkyne_site.id, bond_type='DOUBLE', is_aromatic=True, in_ring=True)
-            ])
+        # Create bonds to form the triazole ring
+        new_edges.extend([
+            GraphEdge(from_idx=azide_site.id, to_idx=n1_id, bond_type='DOUBLE', is_aromatic=True, in_ring=True),
+            GraphEdge(from_idx=n1_id, to_idx=n2_id, bond_type='SINGLE', is_aromatic=True, in_ring=True),
+            GraphEdge(from_idx=n2_id, to_idx=alkyne_site.id, bond_type='DOUBLE', is_aromatic=True, in_ring=True)
+        ])
 
-            cyclic.nodes.extend(new_nodes)
-            cyclic.edges.extend(new_edges)
+        cyclic.nodes.extend(new_nodes)
+        cyclic.edges.extend(new_edges)
 
-            # Clear reactive flags
-            for node in cyclic.nodes:
-                if node.id == azide_site.id:
-                    node.is_reactive_nuc = False
-                if node.id == alkyne_site.id:
-                    node.is_reactive_elec = False
+        # Clear reactive flags
+        for node in cyclic.nodes:
+            if node.id == azide_site.id:
+                node.is_reactive_nuc = False
+            if node.id == alkyne_site.id:
+                node.is_reactive_elec = False
 
-            return self._reindex_graph(cyclic)
+        return self._reindex_graph(cyclic)
 
-        def _is_azide_nitrogen(self, node: GraphNode, graph: MolecularGraph) -> bool:
-            """Check if node is the first nitrogen of an azide group."""
-            if node.element != 'N':
-                return False
+    def _is_azide_nitrogen(self, node: GraphNode, graph: MolecularGraph) -> bool:
+        """Check if node is the first nitrogen of an azide group."""
+        if node.element != 'N':
+            return False
 
-            # Check for N-N≡N pattern
-            connected = self._get_connected_atoms(node.id, graph)
-            if len(connected) != 2:  # Should have one bond to carbon chain and one to next nitrogen
-                return False
+        # Check for N-N≡N pattern
+        connected = self._get_connected_atoms(node.id, graph)
+        if len(connected) != 2:  # Should have one bond to carbon chain and one to next nitrogen
+            return False
 
-            n2 = next((n for n in connected if n.element == 'N'), None)
-            if not n2:
-                return False
+        n2 = next((n for n in connected if n.element == 'N'), None)
+        if not n2:
+            return False
 
-            n2_connected = self._get_connected_atoms(n2.id, graph)
-            n3 = next((n for n in n2_connected if n.element == 'N' and n.id != node.id), None)
+        n2_connected = self._get_connected_atoms(n2.id, graph)
+        n3 = next((n for n in n2_connected if n.element == 'N' and n.id != node.id), None)
 
-            return n3 is not None
+        return n3 is not None
 
-        def _is_alkyne_carbon(self, node: GraphNode, graph: MolecularGraph) -> bool:
-            """Check if node is part of an alkyne group."""
-            if node.element != 'C':
-                return False
+    def _is_alkyne_carbon(self, node: GraphNode, graph: MolecularGraph) -> bool:
+        """Check if node is part of an alkyne group."""
+        if node.element != 'C':
+            return False
 
-            # Find triple bond
-            triple_bond = next(
-                (e for e in graph.edges
-                 if (e.from_idx == node.id or e.to_idx == node.id)
-                 and e.bond_type == 'TRIPLE'),
-                None
-            )
+        # Find triple bond
+        triple_bond = next(
+            (e for e in graph.edges
+                if (e.from_idx == node.id or e.to_idx == node.id)
+                and e.bond_type == 'TRIPLE'),
+            None
+        )
 
-            if not triple_bond:
-                return False
+        if not triple_bond:
+            return False
 
-            # Find the other carbon of the triple bond
-            other_carbon_id = triple_bond.to_idx if triple_bond.from_idx == node.id else triple_bond.from_idx
-            other_carbon = next((n for n in graph.nodes if n.id == other_carbon_id), None)
+        # Find the other carbon of the triple bond
+        other_carbon_id = triple_bond.to_idx if triple_bond.from_idx == node.id else triple_bond.from_idx
+        other_carbon = next((n for n in graph.nodes if n.id == other_carbon_id), None)
 
-            if not other_carbon or other_carbon.element != 'C':
-                return False
+        if not other_carbon or other_carbon.element != 'C':
+            return False
 
-            # Count connections to both carbons
-            node_connections = len(self._get_connected_atoms(node.id, graph))
-            other_connections = len(self._get_connected_atoms(other_carbon_id, graph))
+        # Count connections to both carbons
+        node_connections = len(self._get_connected_atoms(node.id, graph))
+        other_connections = len(self._get_connected_atoms(other_carbon_id, graph))
 
-            # At least one of the carbons should have only one connection besides the triple bond
-            return node_connections <= 2 or other_connections <= 2
+        # At least one of the carbons should have only one connection besides the triple bond
+        return node_connections <= 2 or other_connections <= 2
 
     def _get_connected_atoms(self, node_id: int, graph: MolecularGraph) -> List[GraphNode]:
             """Get all atoms connected to the given node."""
