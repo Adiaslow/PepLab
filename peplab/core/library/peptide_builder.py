@@ -285,38 +285,46 @@ class PeptideBuilder:
         cyclic = copy.deepcopy(linear_peptide)
 
         # Step 1: Find all nodes to remove from reactive groups
-        nodes_to_remove = set()
-        edges_to_remove = set()
+        nodes_to_remove = []  # Changed from set to list
+        edges_to_remove = []  # Using a list for edges
 
         # Collect all nodes and edges connected to reactive sites
-        def find_connected_nodes(start_id: int, visited: set):
+        def find_connected_nodes(start_id: int, visited_ids: list):
             for edge in cyclic.edges:
                 if edge.from_idx == start_id:
-                    edges_to_remove.add(edge)
+                    # Check if edge is already in edges_to_remove by comparing indices
+                    if not any(e.from_idx == edge.from_idx and e.to_idx == edge.to_idx for e in edges_to_remove):
+                        edges_to_remove.append(edge)
                     other_id = edge.to_idx
-                    if other_id not in visited:
-                        visited.add(other_id)
-                        nodes_to_remove.add(other_id)
-                        find_connected_nodes(other_id, visited)
+                    if other_id not in visited_ids:
+                        visited_ids.append(other_id)
+                        if not any(n.id == other_id for n in nodes_to_remove):
+                            nodes_to_remove.append(next(n for n in cyclic.nodes if n.id == other_id))
+                        find_connected_nodes(other_id, visited_ids)
                 elif edge.to_idx == start_id:
-                    edges_to_remove.add(edge)
+                    # Check if edge is already in edges_to_remove by comparing indices
+                    if not any(e.from_idx == edge.from_idx and e.to_idx == edge.to_idx for e in edges_to_remove):
+                        edges_to_remove.append(edge)
                     other_id = edge.from_idx
-                    if other_id not in visited:
-                        visited.add(other_id)
-                        nodes_to_remove.add(other_id)
-                        find_connected_nodes(other_id, visited)
+                    if other_id not in visited_ids:
+                        visited_ids.append(other_id)
+                        if not any(n.id == other_id for n in nodes_to_remove):
+                            nodes_to_remove.append(next(n for n in cyclic.nodes if n.id == other_id))
+                        find_connected_nodes(other_id, visited_ids)
 
         # Find all reactive group atoms
-        find_connected_nodes(azide_site.id, {azide_site.id})
-        find_connected_nodes(alkyne_site.id, {alkyne_site.id})
+        find_connected_nodes(azide_site.id, [azide_site.id])
+        find_connected_nodes(alkyne_site.id, [alkyne_site.id])
 
         # Keep the reactive sites themselves but remove everything else
-        nodes_to_remove.remove(azide_site.id)
-        nodes_to_remove.remove(alkyne_site.id)
+        nodes_to_remove = [n for n in nodes_to_remove if n.id != azide_site.id and n.id != alkyne_site.id]
 
         # Remove all collected nodes and edges
-        cyclic.nodes = [n for n in cyclic.nodes if n.id not in nodes_to_remove]
-        cyclic.edges = [e for e in cyclic.edges if e not in edges_to_remove]
+        cyclic.nodes = [n for n in cyclic.nodes if not any(remove_node.id == n.id for remove_node in nodes_to_remove)]
+        cyclic.edges = [e for e in cyclic.edges if not any(
+            remove_edge.from_idx == e.from_idx and remove_edge.to_idx == e.to_idx
+            for remove_edge in edges_to_remove
+        )]
 
         # Step 2: Create new atoms for triazole
         max_id = max(n.id for n in cyclic.nodes)
@@ -367,7 +375,7 @@ class PeptideBuilder:
                 node.aromatic = True
                 node.hybridization = 'SP2'
                 node.num_explicit_hs = 0
-                node.num_implicit_hs=0
+                node.num_implicit_hs = 0
                 node.total_num_hs = 0
                 node.degree = 2
                 node.in_ring = True
@@ -391,7 +399,7 @@ class PeptideBuilder:
         # Add new atoms
         cyclic.nodes.extend([c4, n2])
 
-        # Create triazole ring bonds - using delocalizing single/double pattern
+        # Create triazole ring bonds
         triazole_bonds = [
             GraphEdge(
                 from_idx=azide_site.id,
