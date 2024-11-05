@@ -300,6 +300,20 @@ class PeptideBuilder:
             cyclic.nodes = [node for node in cyclic.nodes if node.id != n.id]
             cyclic.edges = [edge for edge in cyclic.edges if edge.from_idx != n.id and edge.to_idx != n.id]
 
+        # Remove triple bond and adjust alkyne carbon
+        alkyne_partner_id = None
+        triple_bond = None
+        for edge in cyclic.edges:
+            if edge.bond_type == 'TRIPLE' and (edge.from_idx == alkyne_site.id or edge.to_idx == alkyne_site.id):
+                triple_bond = edge
+                alkyne_partner_id = edge.to_idx if edge.from_idx == alkyne_site.id else edge.from_idx
+                break
+
+        if triple_bond and alkyne_partner_id is not None:
+            cyclic.edges = [edge for edge in cyclic.edges if edge != triple_bond]
+            # Remove the partner carbon of the triple bond
+            cyclic.nodes = [node for node in cyclic.nodes if node.id != alkyne_partner_id]
+
         # Create triazole ring
         max_id = max(n.id for n in cyclic.nodes)
         new_nodes = []
@@ -309,7 +323,6 @@ class PeptideBuilder:
         n1_id = max_id + 1
         n2_id = max_id + 2
 
-        # Create new nitrogen nodes with all required fields
         new_nodes.extend([
             GraphNode(
                 id=n1_id,
@@ -356,7 +369,7 @@ class PeptideBuilder:
             GraphEdge(
                 from_idx=azide_site.id,
                 to_idx=n1_id,
-                bond_type='DOUBLE',
+                bond_type='SINGLE',
                 is_aromatic=True,
                 is_conjugated=True,
                 in_ring=True,
@@ -374,7 +387,7 @@ class PeptideBuilder:
             GraphEdge(
                 from_idx=n2_id,
                 to_idx=alkyne_site.id,
-                bond_type='DOUBLE',
+                bond_type='SINGLE',
                 is_aromatic=True,
                 is_conjugated=True,
                 in_ring=True,
@@ -385,7 +398,7 @@ class PeptideBuilder:
         cyclic.nodes.extend(new_nodes)
         cyclic.edges.extend(new_edges)
 
-        # Update properties of azide nitrogen
+        # Update properties of participating atoms
         for node in cyclic.nodes:
             if node.id == azide_site.id:
                 node.is_reactive_nuc = False
@@ -393,12 +406,20 @@ class PeptideBuilder:
                 node.hybridization = 'SP2'
                 node.degree = 2
                 node.in_ring = True
-            if node.id == alkyne_site.id:
+                node.explicit_valence = 3
+                node.implicit_valence = 3
+                node.num_implicit_hs = 0
+                node.total_num_hs = 0
+            elif node.id == alkyne_site.id:
                 node.is_reactive_elec = False
                 node.aromatic = True
                 node.hybridization = 'SP2'
                 node.degree = 2
                 node.in_ring = True
+                node.explicit_valence = 3
+                node.implicit_valence = 3
+                node.num_implicit_hs = 0
+                node.total_num_hs = 0
 
         return self._reindex_graph(cyclic)
 
