@@ -14,7 +14,6 @@ class MolecularGraph:
     @staticmethod
     def from_smiles(smiles: str) -> 'MolecularGraph':
         """Create molecular graph from SMILES."""
-
         graph = MolecularGraph()
         try:
             mol = Chem.MolFromSmiles(smiles)
@@ -80,9 +79,56 @@ class MolecularGraph:
             self._find_nh2_pattern()
         elif nuc_pattern == 'NH':
             self._find_nh_pattern()
+        elif nuc_pattern == 'N3':
+            self._find_azide_pattern()
 
         if elec_pattern == 'COOH':
             self._find_cooh_pattern()
+        elif elec_pattern == 'C#C':
+            self._find_alkyne_pattern()
+
+    def _find_azide_pattern(self) -> None:
+        """Find azide (N3) group and mark first nitrogen as reactive."""
+        for node in self.nodes:
+            if node.element == 'N':
+                # Check for N-N≡N pattern
+                neighbors = self.get_neighbors(node.id)
+                n2 = None
+                for neighbor, edge in neighbors:
+                    if neighbor.element == 'N':
+                        n2 = neighbor
+                        break
+
+                if n2:
+                    n2_neighbors = self.get_neighbors(n2.id)
+                    n3 = None
+                    for neighbor, edge in n2_neighbors:
+                        if neighbor.element == 'N' and neighbor.id != node.id:
+                            n3 = neighbor
+                            break
+
+                    if n3:
+                        # Verify N3 pattern: N-N≡N
+                        n3_neighbors = self.get_neighbors(n3.id)
+                        if (len(neighbors) == 2 and  # First N has 2 connections
+                            len(n2_neighbors) == 2 and  # Middle N has 2 connections
+                            len(n3_neighbors) == 1):  # Terminal N has 1 connection
+                            node.is_reactive_nuc = True
+
+    def _find_alkyne_pattern(self) -> None:
+        """Find terminal alkyne (C≡C) group and mark as reactive."""
+        for node in self.nodes:
+            if node.element == 'C':
+                neighbors = self.get_neighbors(node.id)
+                for neighbor, edge in neighbors:
+                    if (neighbor.element == 'C' and
+                        edge.bond_type == 'TRIPLE'):
+                        # Check if either carbon is terminal (has only one other connection)
+                        neighbor_connections = self.get_neighbors(neighbor.id)
+                        if (len(neighbors) <= 2 or  # Current carbon has at most 2 connections (triple bond + 1)
+                            len(neighbor_connections) <= 2):  # Partner carbon has at most 2 connections
+                            node.is_reactive_elec = True
+                            break
 
     def _find_nh2_pattern(self) -> None:
         for node in self.nodes:
@@ -131,38 +177,6 @@ class MolecularGraph:
     def to_dict(self) -> Dict:
         """Convert to dictionary format."""
         return {
-            'nodes': [
-                {
-                    'id': n.id,
-                    'element': n.element,
-                    'atomic_num': n.atomic_num,
-                    'formal_charge': n.formal_charge,
-                    'implicit_valence': n.implicit_valence,
-                    'explicit_valence': n.explicit_valence,
-                    'aromatic': n.aromatic,
-                    'hybridization': n.hybridization,
-                    'num_explicit_hs': n.num_explicit_hs,
-                    'num_implicit_hs': n.num_implicit_hs,
-                    'total_num_hs': n.total_num_hs,
-                    'degree': n.degree,
-                    'in_ring': n.in_ring,
-                    'chiral': n.chiral,
-                    'chiral_tag': n.chiral_tag,
-                    'is_reactive_nuc': n.is_reactive_nuc,
-                    'is_reactive_elec': n.is_reactive_elec
-                }
-                for n in self.nodes
-            ],
-            'edges': [
-                {
-                    'from_idx': e.from_idx,
-                    'to_idx': e.to_idx,
-                    'bond_type': e.bond_type,
-                    'is_aromatic': e.is_aromatic,
-                    'is_conjugated': e.is_conjugated,
-                    'in_ring': e.in_ring,
-                    'stereo': e.stereo
-                }
-                for e in self.edges
-            ]
+            'nodes': [n.to_dict() for n in self.nodes],
+            'edges': [e.to_dict() for e in self.edges]
         }
