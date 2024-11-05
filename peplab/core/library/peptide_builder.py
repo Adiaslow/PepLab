@@ -274,7 +274,7 @@ class PeptideBuilder:
         return has_azide and has_alkyne
 
     def click_cyclize_peptide(self, linear_peptide: MolecularGraph) -> MolecularGraph:
-        """Form triazole ring by directly replacing reactive sites."""
+        """Form 1H-1,2,3-triazole ring by directly replacing reactive sites."""
         # Find reactive sites
         azide_site = next((n for n in linear_peptide.nodes if n.is_reactive_nuc), None)
         alkyne_site = next((n for n in linear_peptide.nodes if n.is_reactive_elec), None)
@@ -297,13 +297,14 @@ class PeptideBuilder:
         # Step 2: Create two new nitrogen atoms for the triazole ring
         max_id = max(n.id for n in cyclic.nodes)
 
-        n1 = GraphNode(
+        # Create two nitrogen atoms for positions 2 and 3 of the triazole
+        n2 = GraphNode(
             id=max_id + 1,
             element='N',
             atomic_num=7,
             formal_charge=0,
-            implicit_valence=3,
-            explicit_valence=3,
+            implicit_valence=2,  # sp2 nitrogen in aromatic ring
+            explicit_valence=2,
             aromatic=True,
             hybridization='SP2',
             num_explicit_hs=0,
@@ -313,32 +314,33 @@ class PeptideBuilder:
             in_ring=True
         )
 
-        n2 = GraphNode(
+        # N3 position with H attached
+        n3 = GraphNode(
             id=max_id + 2,
             element='N',
             atomic_num=7,
             formal_charge=0,
-            implicit_valence=3,
-            explicit_valence=3,
+            implicit_valence=2,  # sp2 nitrogen in aromatic ring
+            explicit_valence=2,
             aromatic=True,
             hybridization='SP2',
-            num_explicit_hs=0,
-            num_implicit_hs=0,
-            total_num_hs=0,
+            num_explicit_hs=1,  # This nitrogen has the H
+            num_implicit_hs=1,
+            total_num_hs=1,
             degree=2,
             in_ring=True
         )
 
-        # Step 3: Update properties of original reactive sites
+        # Step 3: Update properties of original atoms
         for node in cyclic.nodes:
             if node.id == azide_site.id:
-                # Convert azide N to triazole N
+                # Convert to N1 position of triazole
                 node.is_reactive_nuc = False
                 node.element = 'N'
                 node.atomic_num = 7
                 node.formal_charge = 0
-                node.implicit_valence = 3
-                node.explicit_valence = 3
+                node.implicit_valence = 2
+                node.explicit_valence = 2
                 node.aromatic = True
                 node.hybridization = 'SP2'
                 node.num_explicit_hs = 0
@@ -348,7 +350,7 @@ class PeptideBuilder:
                 node.in_ring = True
 
             elif node.id == alkyne_site.id:
-                # Convert alkyne C to triazole C
+                # Convert to C5 position of triazole
                 node.is_reactive_elec = False
                 node.element = 'C'
                 node.atomic_num = 6
@@ -357,17 +359,19 @@ class PeptideBuilder:
                 node.explicit_valence = 3
                 node.aromatic = True
                 node.hybridization = 'SP2'
-                node.num_explicit_hs = 0
-                node.num_implicit_hs = 0
-                node.total_num_hs = 0
+                node.num_explicit_hs = 1  # This carbon has one H
+                node.num_implicit_hs = 1
+                node.total_num_hs = 1
                 node.degree = 2
                 node.in_ring = True
 
         # Add new nitrogen atoms
-        cyclic.nodes.extend([n1, n2])
+        cyclic.nodes.extend([n2, n3])
 
-        # Create triazole ring bonds
+        # Create triazole ring bonds matching the structure
+        # N1-C5-C4=N3-N2=N1
         triazole_bonds = [
+            # N1-C5 (single)
             GraphEdge(
                 from_idx=azide_site.id,
                 to_idx=alkyne_site.id,
@@ -376,24 +380,27 @@ class PeptideBuilder:
                 is_conjugated=True,
                 in_ring=True
             ),
+            # C5-N2 (double)
             GraphEdge(
                 from_idx=alkyne_site.id,
-                to_idx=n1.id,
-                bond_type='SINGLE',
-                is_aromatic=True,
-                is_conjugated=True,
-                in_ring=True
-            ),
-            GraphEdge(
-                from_idx=n1.id,
                 to_idx=n2.id,
                 bond_type='DOUBLE',
                 is_aromatic=True,
                 is_conjugated=True,
                 in_ring=True
             ),
+            # N2-N3 (single)
             GraphEdge(
                 from_idx=n2.id,
+                to_idx=n3.id,
+                bond_type='SINGLE',
+                is_aromatic=True,
+                is_conjugated=True,
+                in_ring=True
+            ),
+            # N3-N1 (single)
+            GraphEdge(
+                from_idx=n3.id,
                 to_idx=azide_site.id,
                 bond_type='SINGLE',
                 is_aromatic=True,
