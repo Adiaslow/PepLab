@@ -274,7 +274,7 @@ class PeptideBuilder:
         return has_azide and has_alkyne
 
     def click_cyclize_peptide(self, linear_peptide: MolecularGraph) -> MolecularGraph:
-        """Form triazole ring by directly replacing reactive sites and cleaning up properly."""
+        """Form triazole ring through copper-catalyzed azide-alkyne cycloaddition (CuAAC)."""
         # Find reactive sites
         azide_site = next((n for n in linear_peptide.nodes if n.is_reactive_nuc), None)
         alkyne_site = next((n for n in linear_peptide.nodes if n.is_reactive_elec), None)
@@ -375,23 +375,23 @@ class PeptideBuilder:
                        e.from_idx not in alkyne_group_ids and
                        e.to_idx not in alkyne_group_ids]
 
-        # Step 2: Create new atoms for triazole
+        # Create triazole ring atoms
         max_id = max(n.id for n in cyclic.nodes)
 
-        # Create ring nitrogens (positions 2 and 3)
+        # Add two new nitrogen atoms (N2, N3)
         n2 = GraphNode(
             id=max_id + 1,
             element='N',
             atomic_num=7,
             formal_charge=0,
-            implicit_valence=3,  # Changed to 3 for N2 (makes double bond)
-            explicit_valence=3,
+            implicit_valence=2,
+            explicit_valence=2,
             aromatic=True,
             hybridization='SP2',
             num_explicit_hs=0,
             num_implicit_hs=0,
             total_num_hs=0,
-            degree=2,  # Two bonds (single + double)
+            degree=2,
             in_ring=True
         )
 
@@ -400,93 +400,42 @@ class PeptideBuilder:
             element='N',
             atomic_num=7,
             formal_charge=0,
-            implicit_valence=2,  # Stays 2 for N3 (single bonds only)
+            implicit_valence=2,
             explicit_valence=2,
             aromatic=True,
             hybridization='SP2',
             num_explicit_hs=0,
             num_implicit_hs=0,
             total_num_hs=0,
-            degree=2,  # Two single bonds
+            degree=2,
             in_ring=True
         )
 
-        # Create ring carbon (position 4)
+        # Add C4 carbon
         c4 = GraphNode(
             id=max_id + 3,
             element='C',
             atomic_num=6,
             formal_charge=0,
-            implicit_valence=4,  # Changed to 4 for C4 (makes double bond)
-            explicit_valence=4,
+            implicit_valence=3,
+            explicit_valence=3,
             aromatic=True,
             hybridization='SP2',
-            num_explicit_hs=1,
+            num_explicit_hs=0,
             num_implicit_hs=0,
-            total_num_hs=1,
-            degree=3,  # Three bonds (two bonds + H)
+            total_num_hs=0,
+            degree=2,
             in_ring=True
         )
 
-        # Update alkyne site to ring carbon (position 5)
-        for node in cyclic.nodes:
-            if node.id == alkyne_site.id:
-                node.is_reactive_elec = False
-                node.element = 'C'
-                node.atomic_num = 6
-                node.formal_charge = 0
-                node.implicit_valence = 4  # Changed to 4 (makes double bond + connection to peptide)
-                node.explicit_valence = 4
-                node.aromatic = True
-                node.hybridization = 'SP2'
-                node.num_explicit_hs = 0
-                node.num_implicit_hs = 0,
-                node.total_num_hs = 0
-                node.degree = 3  # Three bonds (two ring bonds + peptide connection)
-                node.in_ring = True
-
-        # Update azide site to ring nitrogen (position 1)
+        # Update azide site to N1
         for node in cyclic.nodes:
             if node.id == azide_site.id:
                 node.is_reactive_nuc = False
                 node.element = 'N'
                 node.atomic_num = 7
                 node.formal_charge = 0
-                node.implicit_valence = 2  # Stays 2 (two single bonds)
-                node.explicit_valence = 2
-                node.aromatic = True
-                node.hybridization = 'SP2'
-                node.num_explicit_hs = 0
-                node.num_implicit_hs = 0
-                node.total_num_hs = 0
-                node.degree = 2  # Two single bonds
-                node.in_ring = True
-
-        # Update alkyne site to ring carbon (position 5)
-        for node in cyclic.nodes:
-            if node.id == alkyne_site.id:
-                node.is_reactive_elec = False
-                node.element = 'C'
-                node.atomic_num = 6
-                node.formal_charge = 0
-                node.implicit_valence =3
-                node.explicit_valence = 3
-                node.aromatic = True
-                node.hybridization = 'SP2'
-                node.num_explicit_hs = 0
-                node.num_implicit_hs = 0
-                node.total_num_hs = 0
-                node.degree = 3  # Changed to 3 to account for peptide connection
-                node.in_ring = True
-
-        # Update azide site to ring nitrogen (position 1)
-        for node in cyclic.nodes:
-            if node.id == azide_site.id:
-                node.is_reactive_nuc = False
-                node.element = 'N'
-                node.atomic_num = 7
-                node.formal_charge = 0
-                node.implicit_valence =2
+                node.implicit_valence = 2
                 node.explicit_valence = 2
                 node.aromatic = True
                 node.hybridization = 'SP2'
@@ -496,10 +445,27 @@ class PeptideBuilder:
                 node.degree = 2
                 node.in_ring = True
 
-        # Add new atoms
+        # Update alkyne site to C5
+        for node in cyclic.nodes:
+            if node.id == alkyne_site.id:
+                node.is_reactive_elec = False
+                node.element = 'C'
+                node.atomic_num = 6
+                node.formal_charge = 0
+                node.implicit_valence = 3
+                node.explicit_valence = 3
+                node.aromatic = True
+                node.hybridization = 'SP2'
+                node.num_explicit_hs = 0
+                node.num_implicit_hs = 0
+                node.total_num_hs = 0
+                node.degree = 2
+                node.in_ring = True
+
+        # Add new atoms to graph
         cyclic.nodes.extend([n2, n3, c4])
 
-        # Create triazole ring bonds (5-membered ring with 3 nitrogens)
+        # Create triazole ring bonds with correct alternation
         triazole_bonds = [
             # N1-N2
             GraphEdge(
@@ -508,16 +474,18 @@ class PeptideBuilder:
                 bond_type='SINGLE',
                 is_aromatic=True,
                 is_conjugated=True,
-                in_ring=True
+                in_ring=True,
+                stereo='NONE'
             ),
-            # N2-N3
+            # N2=N3
             GraphEdge(
                 from_idx=n2.id,
                 to_idx=n3.id,
                 bond_type='DOUBLE',
                 is_aromatic=True,
                 is_conjugated=True,
-                in_ring=True
+                in_ring=True,
+                stereo='NONE'
             ),
             # N3-C4
             GraphEdge(
@@ -526,16 +494,18 @@ class PeptideBuilder:
                 bond_type='SINGLE',
                 is_aromatic=True,
                 is_conjugated=True,
-                in_ring=True
+                in_ring=True,
+                stereo='NONE'
             ),
-            # C4-C5 (alkyne site)
+            # C4=C5
             GraphEdge(
                 from_idx=c4.id,
                 to_idx=alkyne_site.id,
                 bond_type='DOUBLE',
                 is_aromatic=True,
                 is_conjugated=True,
-                in_ring=True
+                in_ring=True,
+                stereo='NONE'
             ),
             # C5-N1 (complete the ring)
             GraphEdge(
@@ -544,7 +514,8 @@ class PeptideBuilder:
                 bond_type='SINGLE',
                 is_aromatic=True,
                 is_conjugated=True,
-                in_ring=True
+                in_ring=True,
+                stereo='NONE'
             )
         ]
 
