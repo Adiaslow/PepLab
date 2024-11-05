@@ -420,12 +420,38 @@ class PeptideBuilder:
 
     def _clean_click_reactive_groups(self, graph: MolecularGraph, azide_id: int, alkyne_id: int) -> MolecularGraph:
         """Remove azide and alkyne groups while preserving peptide connections."""
-        # Find and remove azide group (N3)
-        azide_atoms = set()
-        alkyne_atoms = set()
+        # Helper function to find the peptide backbone connection
+        def find_peptide_connection(start_id: int) -> int:
+            for edge in graph.edges:
+                if edge.from_idx == start_id:
+                    node = next(n for n in graph.nodes if n.id == edge.to_idx)
+                    # Look for carbon connected to peptide backbone
+                    if node.element == 'C' and any(e for e in graph.edges if
+                        (e.from_idx == edge.to_idx or e.to_idx == edge.to_idx) and
+                        e.bond_type == 'SINGLE' and
+                        next(n for n in graph.nodes if n.id == (e.to_idx if e.from_idx == edge.to_idx else e.from_idx)).element == 'C'):
+                        return edge.to_idx
+                elif edge.to_idx == start_id:
+                    node = next(n for n in graph.nodes if n.id == edge.from_idx)
+                    if node.element == 'C' and any(e for e in graph.edges if
+                        (e.from_idx == edge.from_idx or e.to_idx == edge.from_idx) and
+                        e.bond_type == 'SINGLE' and
+                        next(n for n in graph.nodes if n.id == (e.to_idx if e.from_idx == edge.from_idx else e.from_idx)).element == 'C'):
+                        return edge.from_idx
+            return None
 
-        # Helper function to find connected atoms
-        def find_connected(start_id: int, visited: set, group_atoms: set):
+        # Find peptide connections
+        azide_peptide_connection = find_peptide_connection(azide_id)
+        alkyne_peptide_connection = find_peptide_connection(alkyne_id)
+
+        if not azide_peptide_connection or not alkyne_peptide_connection:
+            raise ValueError("Could not find peptide backbone connections")
+
+        # Sets to store atoms to remove
+        to_remove = set()
+
+        # Helper function to find atoms to remove
+        def find_atoms_to_remove(start_id: int, peptide_connection: int, visited: set):
             for edge in graph.edges:
                 if edge.from_idx == start_id:
                     other_id = edge.to_idx
@@ -434,22 +460,39 @@ class PeptideBuilder:
                 else:
                     continue
 
+                # Skip the peptide connection
+                if other_id == peptide_connection:
+                    continue
+
                 if other_id not in visited:
                     node = next(n for n in graph.nodes if n.id == other_id)
-                    if ((node.element == 'N' and start_id == azide_id) or  # For azide group
-                        (node.element in ['C', 'H'] and start_id == alkyne_id)):  # For alkyne group
-                        group_atoms.add(other_id)
-                        visited.add(other_id)
-                        find_connected(other_id, visited, group_atoms)
+                    visited.add(other_id)
 
-        # Find azide and alkyne groups
-        find_connected(azide_id, {azide_id}, azide_atoms)
-        find_connected(alkyne_id, {alkyne_id}, alkyne_atoms)
+                    # For azide group: collect N, NH2-, NH4+ and connected atoms
+                    if start_id == azide_id:
+                        if (node.element in ['N', 'H'] or
+                            (node.element == 'C' and node.id != azide_peptide_connection)):
+                            to_remove.add(other_id)
+                            find_atoms_to_remove(other_id, peptide_connection, visited)
 
-        # Remove edges connected to atoms being removed
+                    # For alkyne group: collect terminal alkyne atoms and H
+                    elif start_id == alkyne_id:
+                        if (node.element in ['H'] or
+                            (node.element == 'C' and
+                             any(e.bond_type == 'TRIPLE' for e in graph.edges
+                                 if e.from_idx == other_id or e.to_idx == other_id))):
+                            to_remove.add(other_id)
+                            find_atoms_to_remove(other_id, peptide_connection, visited)
+
+        # Find all atoms to remove
+        find_atoms_to_remove(azide_id, azide_peptide_connection, {azide_id})
+        find_atoms_to_remove(alkyne_id, alkyne_peptide_connection, {alkyne_id})
+
+        # Remove marked atoms and their connected edges
+        graph.nodes = [n for n in graph.nodes if n.id not in to_remove]
         graph.edges = [e for e in graph.edges if
-                      not (e.from_idx in azide_atoms or e.to_idx in azide_atoms) and
-                      not (e.from_idx in alkyne_atoms or e.to_idx in alkyne_atoms)]
+                      e.from_idx not in to_remove and
+                      e.to_idx not in to_remove]
 
         return graph
 
