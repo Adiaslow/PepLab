@@ -309,9 +309,46 @@ class PeptideBuilder:
         n1_id = max_id + 1
         n2_id = max_id + 2
 
+        # Create new nitrogen nodes with all required fields
         new_nodes.extend([
-            GraphNode(id=n1_id, element='N', is_aromatic=True),
-            GraphNode(id=n2_id, element='N', is_aromatic=True)
+            GraphNode(
+                id=n1_id,
+                element='N',
+                atomic_num=7,
+                formal_charge=0,
+                implicit_valence=3,
+                explicit_valence=3,
+                aromatic=True,
+                hybridization='SP2',
+                num_explicit_hs=0,
+                num_implicit_hs=0,
+                total_num_hs=0,
+                degree=2,
+                in_ring=True,
+                chiral=False,
+                chiral_tag='CHI_UNSPECIFIED',
+                is_reactive_nuc=False,
+                is_reactive_elec=False
+            ),
+            GraphNode(
+                id=n2_id,
+                element='N',
+                atomic_num=7,
+                formal_charge=0,
+                implicit_valence=3,
+                explicit_valence=3,
+                aromatic=True,
+                hybridization='SP2',
+                num_explicit_hs=0,
+                num_implicit_hs=0,
+                total_num_hs=0,
+                degree=2,
+                in_ring=True,
+                chiral=False,
+                chiral_tag='CHI_UNSPECIFIED',
+                is_reactive_nuc=False,
+                is_reactive_elec=False
+            )
         ])
 
         # Create bonds to form the triazole ring
@@ -348,12 +385,20 @@ class PeptideBuilder:
         cyclic.nodes.extend(new_nodes)
         cyclic.edges.extend(new_edges)
 
-        # Clear reactive flags
+        # Update properties of azide nitrogen
         for node in cyclic.nodes:
             if node.id == azide_site.id:
                 node.is_reactive_nuc = False
+                node.aromatic = True
+                node.hybridization = 'SP2'
+                node.degree = 2
+                node.in_ring = True
             if node.id == alkyne_site.id:
                 node.is_reactive_elec = False
+                node.aromatic = True
+                node.hybridization = 'SP2'
+                node.degree = 2
+                node.in_ring = True
 
         return self._reindex_graph(cyclic)
 
