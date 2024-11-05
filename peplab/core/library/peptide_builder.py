@@ -376,57 +376,57 @@ class PeptideBuilder:
                        e.to_idx not in alkyne_group_ids]
 
         # Step 2: Create new atoms for triazole
-            max_id = max(n.id for n in cyclic.nodes)
+        max_id = max(n.id for n in cyclic.nodes)
 
-            # Create ring nitrogens (positions 2 and 3)
-            n2 = GraphNode(
-                id=max_id + 1,
-                element='N',
-                atomic_num=7,
-                formal_charge=0,
-                implicit_valence=3,  # Changed to 3 for N2 (makes double bond)
-                explicit_valence=3,
-                aromatic=True,
-                hybridization='SP2',
-                num_explicit_hs=0,
-                num_implicit_hs=0,
-                total_num_hs=0,
-                degree=2,  # Two bonds (single + double)
-                in_ring=True
-            )
+        # Create ring nitrogens (positions 2 and 3)
+        n2 = GraphNode(
+            id=max_id + 1,
+            element='N',
+            atomic_num=7,
+            formal_charge=0,
+            implicit_valence=3,  # Changed to 3 for N2 (makes double bond)
+            explicit_valence=3,
+            aromatic=True,
+            hybridization='SP2',
+            num_explicit_hs=0,
+            num_implicit_hs=0,
+            total_num_hs=0,
+            degree=2,  # Two bonds (single + double)
+            in_ring=True
+        )
 
-            n3 = GraphNode(
-                id=max_id + 2,
-                element='N',
-                atomic_num=7,
-                formal_charge=0,
-                implicit_valence=2,  # Stays 2 for N3 (single bonds only)
-                explicit_valence=2,
-                aromatic=True,
-                hybridization='SP2',
-                num_explicit_hs=0,
-                num_implicit_hs=0,
-                total_num_hs=0,
-                degree=2,  # Two single bonds
-                in_ring=True
-            )
+        n3 = GraphNode(
+            id=max_id + 2,
+            element='N',
+            atomic_num=7,
+            formal_charge=0,
+            implicit_valence=2,  # Stays 2 for N3 (single bonds only)
+            explicit_valence=2,
+            aromatic=True,
+            hybridization='SP2',
+            num_explicit_hs=0,
+            num_implicit_hs=0,
+            total_num_hs=0,
+            degree=2,  # Two single bonds
+            in_ring=True
+        )
 
-            # Create ring carbon (position 4)
-            c4 = GraphNode(
-                id=max_id + 3,
-                element='C',
-                atomic_num=6,
-                formal_charge=0,
-                implicit_valence=4,  # Changed to 4 for C4 (makes double bond)
-                explicit_valence=4,
-                aromatic=True,
-                hybridization='SP2',
-                num_explicit_hs=1,
-                num_implicit_hs=0,
-                total_num_hs=1,
-                degree=3,  # Three bonds (two bonds + H)
-                in_ring=True
-            )
+        # Create ring carbon (position 4)
+        c4 = GraphNode(
+            id=max_id + 3,
+            element='C',
+            atomic_num=6,
+            formal_charge=0,
+            implicit_valence=4,  # Changed to 4 for C4 (makes double bond)
+            explicit_valence=4,
+            aromatic=True,
+            hybridization='SP2',
+            num_explicit_hs=1,
+            num_implicit_hs=0,
+            total_num_hs=1,
+            degree=3,  # Three bonds (two bonds + H)
+            in_ring=True
+        )
 
         # Update alkyne site to ring carbon (position 5)
         for node in cyclic.nodes:
