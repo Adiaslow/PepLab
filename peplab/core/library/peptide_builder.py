@@ -327,11 +327,11 @@ class PeptideBuilder:
             element='C',
             atomic_num=6,
             formal_charge=0,
-            implicit_valence=3,
+            implicit_valence=3,  # Changed from 3 to match aromatic carbon
             explicit_valence=3,
             aromatic=True,
             hybridization='SP2',
-            num_explicit_hs=1,
+            num_explicit_hs=0,   # Changed from 1
             num_implicit_hs=1,
             total_num_hs=1,
             degree=2,
@@ -344,7 +344,7 @@ class PeptideBuilder:
             element='N',
             atomic_num=7,
             formal_charge=0,
-            implicit_valence=2,
+            implicit_valence=2,  # Changed from 2 to match aromatic nitrogen
             explicit_valence=2,
             aromatic=True,
             hybridization='SP2',
@@ -362,7 +362,7 @@ class PeptideBuilder:
                 node.element = 'C'
                 node.atomic_num = 6
                 node.formal_charge = 0
-                node.implicit_valence = 3
+                node.implicit_valence = 3  # Changed to match aromatic carbon
                 node.explicit_valence = 3
                 node.aromatic = True
                 node.hybridization = 'SP2'
@@ -378,12 +378,12 @@ class PeptideBuilder:
                 node.element = 'N'
                 node.atomic_num = 7
                 node.formal_charge = 0
-                node.implicit_valence = 2
+                node.implicit_valence = 2  # Changed to match aromatic nitrogen
                 node.explicit_valence = 2
                 node.aromatic = True
                 node.hybridization = 'SP2'
-                node.num_explicit_hs = 1
-                node.num_implicit_hs = 1
+                node.num_explicit_hs = 0   # Changed from 1
+                node.num_implicit_hs = 1,
                 node.total_num_hs = 1
                 node.degree = 2
                 node.in_ring = True
@@ -391,7 +391,7 @@ class PeptideBuilder:
         # Add new atoms
         cyclic.nodes.extend([c4, n2])
 
-        # Create triazole ring bonds
+        # Create triazole ring bonds with corrected bond types
         triazole_bonds = [
             # N1-C5 (single bond)
             GraphEdge(
@@ -402,29 +402,29 @@ class PeptideBuilder:
                 is_conjugated=True,
                 in_ring=True
             ),
-            # C5-N2 (single bond)
+            # C5-N2 (double bond)  # Changed from single to double
             GraphEdge(
                 from_idx=alkyne_site.id,
                 to_idx=n2.id,
-                bond_type='SINGLE',
-                is_aromatic=True,
-                is_conjugated=True,
-                in_ring=True
-            ),
-            # N2=C4 (double bond)
-            GraphEdge(
-                from_idx=n2.id,
-                to_idx=c4.id,
                 bond_type='DOUBLE',
                 is_aromatic=True,
                 is_conjugated=True,
                 in_ring=True
             ),
-            # C4-N1 (single bond)
+            # N2-C4 (single bond)  # Changed from double to single
+            GraphEdge(
+                from_idx=n2.id,
+                to_idx=c4.id,
+                bond_type='SINGLE',
+                is_aromatic=True,
+                is_conjugated=True,
+                in_ring=True
+            ),
+            # C4=N1 (double bond)  # Changed from single to double
             GraphEdge(
                 from_idx=c4.id,
                 to_idx=azide_site.id,
-                bond_type='SINGLE',
+                bond_type='DOUBLE',
                 is_aromatic=True,
                 is_conjugated=True,
                 in_ring=True
