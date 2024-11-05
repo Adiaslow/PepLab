@@ -480,7 +480,7 @@ class PeptideBuilder:
             GraphEdge(
                 from_idx=n2.id,
                 to_idx=n3.id,
-                bond_type='SINGLE',
+                bond_type='DOUBLE',
                 is_aromatic=True,
                 is_conjugated=True,
                 in_ring=True
@@ -489,7 +489,7 @@ class PeptideBuilder:
             GraphEdge(
                 from_idx=n3.id,
                 to_idx=c4.id,
-                bond_type='DOUBLE',
+                bond_type='SINGLE',
                 is_aromatic=True,
                 is_conjugated=True,
                 in_ring=True
