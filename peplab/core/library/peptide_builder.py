@@ -336,7 +336,7 @@ class PeptideBuilder:
         # Create 1,2,3-triazole ring
         max_id = max(n.id for n in cyclic.nodes)
 
-        # Create two new ring nitrogens with proper valence
+        # Create two new ring nitrogens
         n1 = GraphNode(
             id=max_id + 1,
             element='N',
@@ -344,7 +344,7 @@ class PeptideBuilder:
             formal_charge=0,
             implicit_valence=2,
             explicit_valence=2,
-            aromatic=True,
+            aromatic=False,  # Will be set to true after all bonds are formed
             hybridization='SP2',
             num_explicit_hs=0,
             num_implicit_hs=0,
@@ -362,7 +362,7 @@ class PeptideBuilder:
             formal_charge=0,
             implicit_valence=2,
             explicit_valence=2,
-            aromatic=True,
+            aromatic=False,  # Will be set to true after all bonds are formed
             hybridization='SP2',
             num_explicit_hs=0,
             num_implicit_hs=0,
@@ -375,58 +375,59 @@ class PeptideBuilder:
 
         cyclic.nodes.extend([n1, n2])
 
-        # First connect azide N to alkyne C with a single bond
-        single_bond = GraphEdge(
-            from_idx=azide_site.id,
-            to_idx=alkyne_site.id,
-            bond_type='SINGLE',
-            is_aromatic=False,
-            is_conjugated=False,
-            in_ring=True,
-            stereo='NONE'
-        )
-
-        # Then form the aromatic ring with the new nitrogens
+        # Form the triazole ring with a valid Kekulé structure
         ring_bonds = [
+            # Single bond between first azide N and alkyne C
+            GraphEdge(
+                from_idx=azide_site.id,
+                to_idx=alkyne_site.id,
+                bond_type='SINGLE',
+                is_aromatic=False,
+                is_conjugated=True,
+                in_ring=True,
+                stereo='NONE'
+            ),
+            # Double bond between alkyne C and first new N
             GraphEdge(
                 from_idx=alkyne_site.id,
                 to_idx=n1.id,
                 bond_type='DOUBLE',
-                is_aromatic=True,
+                is_aromatic=False,
                 is_conjugated=True,
                 in_ring=True,
                 stereo='NONE'
             ),
+            # Single bond between two new N atoms
             GraphEdge(
                 from_idx=n1.id,
                 to_idx=n2.id,
                 bond_type='SINGLE',
-                is_aromatic=True,
+                is_aromatic=False,
                 is_conjugated=True,
                 in_ring=True,
                 stereo='NONE'
             ),
+            # Double bond back to first azide N
             GraphEdge(
                 from_idx=n2.id,
                 to_idx=azide_site.id,
                 bond_type='DOUBLE',
-                is_aromatic=True,
+                is_aromatic=False,
                 is_conjugated=True,
                 in_ring=True,
                 stereo='NONE'
             )
         ]
 
-        cyclic.edges.append(single_bond)
         cyclic.edges.extend(ring_bonds)
 
         # Update properties of original atoms
         for node in cyclic.nodes:
             if node.id == azide_site.id:
                 node.is_reactive_nuc = False
-                node.aromatic = True
+                node.aromatic = False
                 node.hybridization = 'SP2'
-                node.degree = 3  # Now has 3 connections
+                node.degree = 3
                 node.in_ring = True
                 node.explicit_valence = 3
                 node.implicit_valence = 3
@@ -435,9 +436,9 @@ class PeptideBuilder:
                 node.total_num_hs = 0
             elif node.id == alkyne_site.id:
                 node.is_reactive_elec = False
-                node.aromatic = True
+                node.aromatic = False
                 node.hybridization = 'SP2'
-                node.degree = 3  # Now has 3 connections
+                node.degree = 3
                 node.in_ring = True
                 node.explicit_valence = 3
                 node.implicit_valence = 3
