@@ -284,44 +284,96 @@ class PeptideBuilder:
 
         cyclic = copy.deepcopy(linear_peptide)
 
-        # Step 1: Find all nodes to remove from reactive groups
-        nodes_to_remove = []
-        edges_to_remove = []
+        # First, identify the reactive groups without removing the connection to peptide
+        azide_group_ids = []  # Will store IDs of N3 group except the attachment point
+        alkyne_group_ids = [] # Will store IDs of alkyne group except the attachment point
 
-        def find_connected_nodes(start_id: int, visited_ids: list):
+        # Find azide group (N3)
+        def find_azide_group(start_id: int, peptide_connection_id: int, visited_ids: list):
             for edge in cyclic.edges:
                 if edge.from_idx == start_id:
-                    if not any(e.from_idx == edge.from_idx and e.to_idx == edge.to_idx for e in edges_to_remove):
-                        edges_to_remove.append(edge)
                     other_id = edge.to_idx
+                    # Skip the connection back to peptide
+                    if other_id == peptide_connection_id:
+                        continue
                     if other_id not in visited_ids:
                         visited_ids.append(other_id)
-                        if not any(n.id == other_id for n in nodes_to_remove):
-                            nodes_to_remove.append(next(n for n in cyclic.nodes if n.id == other_id))
-                        find_connected_nodes(other_id, visited_ids)
+                        node = next(n for n in cyclic.nodes if n.id == other_id)
+                        if node.element == 'N':  # Only add nitrogen atoms
+                            azide_group_ids.append(other_id)
+                        find_azide_group(other_id, peptide_connection_id, visited_ids)
                 elif edge.to_idx == start_id:
-                    if not any(e.from_idx == edge.from_idx and e.to_idx == edge.to_idx for e in edges_to_remove):
-                        edges_to_remove.append(edge)
                     other_id = edge.from_idx
+                    # Skip the connection back to peptide
+                    if other_id == peptide_connection_id:
+                        continue
                     if other_id not in visited_ids:
                         visited_ids.append(other_id)
-                        if not any(n.id == other_id for n in nodes_to_remove):
-                            nodes_to_remove.append(next(n for n in cyclic.nodes if n.id == other_id))
-                        find_connected_nodes(other_id, visited_ids)
+                        node = next(n for n in cyclic.nodes if n.id == other_id)
+                        if node.element == 'N':  # Only add nitrogen atoms
+                            azide_group_ids.append(other_id)
+                        find_azide_group(other_id, peptide_connection_id, visited_ids)
 
-        # Find all reactive group atoms
-        find_connected_nodes(azide_site.id, [azide_site.id])
-        find_connected_nodes(alkyne_site.id, [alkyne_site.id])
+        # Find alkyne group (C≡C)
+        def find_alkyne_group(start_id: int, peptide_connection_id: int, visited_ids: list):
+            for edge in cyclic.edges:
+                if edge.from_idx == start_id:
+                    other_id = edge.to_idx
+                    # Skip the connection back to peptide
+                    if other_id == peptide_connection_id:
+                        continue
+                    if other_id not in visited_ids:
+                        visited_ids.append(other_id)
+                        node = next(n for n in cyclic.nodes if n.id == other_id)
+                        if edge.bond_type == 'TRIPLE' or node.element == 'H':
+                            alkyne_group_ids.append(other_id)
+                        find_alkyne_group(other_id, peptide_connection_id, visited_ids)
+                elif edge.to_idx == start_id:
+                    other_id = edge.from_idx
+                    # Skip the connection back to peptide
+                    if other_id == peptide_connection_id:
+                        continue
+                    if other_id not in visited_ids:
+                        visited_ids.append(other_id)
+                        node = next(n for n in cyclic.nodes if n.id == other_id)
+                        if edge.bond_type == 'TRIPLE' or node.element == 'H':
+                            alkyne_group_ids.append(other_id)
+                        find_alkyne_group(other_id, peptide_connection_id, visited_ids)
 
-        # Keep the reactive sites themselves but remove everything else
-        nodes_to_remove = [n for n in nodes_to_remove if n.id != azide_site.id and n.id != alkyne_site.id]
+        # Find the peptide connection points
+        azide_connection = None
+        alkyne_connection = None
 
-        # Remove all collected nodes and edges
-        cyclic.nodes = [n for n in cyclic.nodes if not any(remove_node.id == n.id for remove_node in nodes_to_remove)]
-        cyclic.edges = [e for e in cyclic.edges if not any(
-            remove_edge.from_idx == e.from_idx and remove_edge.to_idx == e.to_idx
-            for remove_edge in edges_to_remove
-        )]
+        for edge in cyclic.edges:
+            if edge.from_idx == azide_site.id:
+                node = next(n for n in cyclic.nodes if n.id == edge.to_idx)
+                if node.element == 'C':  # Connection to peptide is typically via carbon
+                    azide_connection = edge.to_idx
+            elif edge.to_idx == azide_site.id:
+                node = next(n for n in cyclic.nodes if n.id == edge.from_idx)
+                if node.element == 'C':
+                    azide_connection = edge.from_idx
+
+            if edge.from_idx == alkyne_site.id:
+                node = next(n for n in cyclic.nodes if n.id == edge.to_idx)
+                if node.element == 'C' and not any(e.bond_type == 'TRIPLE' for e in cyclic.edges if e.from_idx == edge.to_idx or e.to_idx == edge.to_idx):
+                    alkyne_connection = edge.to_idx
+            elif edge.to_idx == alkyne_site.id:
+                node = next(n for n in cyclic.nodes if n.id == edge.from_idx)
+                if node.element == 'C' and not any(e.bond_type == 'TRIPLE' for e in cyclic.edges if e.from_idx == edge.from_idx or e.to_idx == edge.from_idx):
+                    alkyne_connection = edge.from_idx
+
+        # Find groups to remove
+        find_azide_group(azide_site.id, azide_connection, [azide_site.id])
+        find_alkyne_group(alkyne_site.id, alkyne_connection, [alkyne_site.id])
+
+        # Remove the identified groups
+        cyclic.nodes = [n for n in cyclic.nodes if n.id not in azide_group_ids and n.id not in alkyne_group_ids]
+        cyclic.edges = [e for e in cyclic.edges if
+                       e.from_idx not in azide_group_ids and
+                       e.to_idx not in azide_group_ids and
+                       e.from_idx not in alkyne_group_ids and
+                       e.to_idx not in alkyne_group_ids]
 
         # Step 2: Create new atoms for triazole
         max_id = max(n.id for n in cyclic.nodes)
