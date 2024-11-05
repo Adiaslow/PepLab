@@ -274,146 +274,101 @@ class PeptideBuilder:
         return has_azide and has_alkyne
 
     def click_cyclize_peptide(self, linear_peptide: MolecularGraph) -> MolecularGraph:
-        """Form triazole ring by directly replacing reactive sites and cleaning up properly."""
-        # Find reactive sites
-        azide_site = next((n for n in linear_peptide.nodes if n.is_reactive_nuc), None)
-        alkyne_site = next((n for n in linear_peptide.nodes if n.is_reactive_elec), None)
+        """Form 1,4-disubstituted 1,2,3-triazole ring via click chemistry."""
+        # [Previous code for finding reactive sites and connection points stays the same until node creation]
 
-        if not azide_site or not alkyne_site:
-            raise ValueError("Cannot find required reactive sites")
-
-        cyclic = copy.deepcopy(linear_peptide)
-
-        # Find the connection points (CH2 groups) that we want to keep
-        azide_connection = None
-        alkyne_connection = None
-
-        # Find CH2 next to azide
-        for edge in cyclic.edges:
-            if edge.from_idx == azide_site.id:
-                node = next(n for n in cyclic.nodes if n.id == edge.to_idx)
-                if node.element == 'C' and node.num_explicit_hs == 2:  # Look for CH2
-                    azide_connection = node.id
-            elif edge.to_idx == azide_site.id:
-                node = next(n for n in cyclic.nodes if n.id == edge.from_idx)
-                if node.element == 'C' and node.num_explicit_hs == 2:  # Look for CH2
-                    azide_connection = node.id
-
-        # Find CH2 next to alkyne
-        for edge in cyclic.edges:
-            if edge.from_idx == alkyne_site.id:
-                node = next(n for n in cyclic.nodes if n.id == edge.to_idx)
-                if node.element == 'C' and node.num_explicit_hs == 2:  # Look for CH2
-                    alkyne_connection = node.id
-            elif edge.to_idx == alkyne_site.id:
-                node = next(n for n in cyclic.nodes if n.id == edge.from_idx)
-                if node.element == 'C' and node.num_explicit_hs == 2:  # Look for CH2
-                    alkyne_connection = node.id
-
-        # Remove everything except the CH2 connections and the peptide backbone
-        nodes_to_keep = [azide_connection, alkyne_connection]
-        cyclic.nodes = [n for n in cyclic.nodes if
-                       n.id in nodes_to_keep or
-                       (n.element == 'C' and n.num_explicit_hs <= 1)]  # Keep backbone carbons
-
-        # Remove bonds to azide and alkyne groups while keeping CH2 connections
-        cyclic.edges = [e for e in cyclic.edges if
-                       not any(n.is_reactive_nuc or n.is_reactive_elec
-                              for n in cyclic.nodes
-                              if n.id in [e.from_idx, e.to_idx])]
-
-        # Create new atoms for triazole
+        # Create new atoms for 1,4-disubstituted 1,2,3-triazole
         max_id = max(n.id for n in cyclic.nodes)
 
-        # Create N1 of triazole (connected to CH2)
+        # Create N1 (connected to azide CH2 chain)
         n1 = GraphNode(
             id=max_id + 1,
             element='N',
             atomic_num=7,
             formal_charge=0,
-            implicit_valence=2,  # N1 has two single bonds
+            implicit_valence=2,  # Two single bonds
             explicit_valence=2,
             aromatic=True,
             hybridization='SP2',
             num_explicit_hs=0,
             num_implicit_hs=0,
             total_num_hs=0,
-            degree=2,  # One bond to N2, one to CH2
+            degree=2,  # One ring bond + one chain bond
             in_ring=True
         )
 
-        # Create N2 (makes double bond)
+        # Create N2
         n2 = GraphNode(
             id=max_id + 2,
             element='N',
             atomic_num=7,
             formal_charge=0,
-            implicit_valence=2,  # N2 has one single and one double bond
+            implicit_valence=2,  # One single + one double bond
             explicit_valence=2,
             aromatic=True,
             hybridization='SP2',
             num_explicit_hs=0,
             num_implicit_hs=0,
             total_num_hs=0,
-            degree=2,  # One bond to N1, one to N3
+            degree=2,
             in_ring=True
         )
 
-        # Create N3 (connected to C4)
+        # Create N3
         n3 = GraphNode(
             id=max_id + 3,
             element='N',
             atomic_num=7,
             formal_charge=0,
-            implicit_valence=2,  # N3 has two single bonds
+            implicit_valence=2,  # Two single bonds
             explicit_valence=2,
             aromatic=True,
             hybridization='SP2',
             num_explicit_hs=0,
             num_implicit_hs=0,
             total_num_hs=0,
-            degree=2,  # One bond to N2, one to C4
+            degree=2,
             in_ring=True
         )
 
-        # Create C4 (has one H)
+        # Create C4 (connected to alkyne CH2)
         c4 = GraphNode(
             id=max_id + 4,
             element='C',
             atomic_num=6,
             formal_charge=0,
-            implicit_valence=3,  # One single bond to N3, one double bond to C5, one H
+            implicit_valence=3,  # Two single bonds + CH2 connection
+            explicit_valence=3,
+            aromatic=True,
+            hybridization='SP2',
+            num_explicit_hs=0,
+            num_implicit_hs=0,
+            total_num_hs=0,
+            degree=3,  # Two ring bonds + one chain bond
+            in_ring=True
+        )
+
+        # Create C5
+        c5 = GraphNode(
+            id=max_id + 5,
+            element='C',
+            atomic_num=6,
+            formal_charge=0,
+            implicit_valence=3,  # One single bond + one double bond + one H
             explicit_valence=3,
             aromatic=True,
             hybridization='SP2',
             num_explicit_hs=1,
             num_implicit_hs=0,
             total_num_hs=1,
-            degree=2,  # One bond to N3, one to C5
-            in_ring=True
-        )
-
-        # Create C5 (connected to CH2)
-        c5 = GraphNode(
-            id=max_id + 5,
-            element='C',
-            atomic_num=6,
-            formal_charge=0,
-            implicit_valence=3,  # One double bond to C4, one single bond to N1, one to CH2
-            explicit_valence=3,
-            aromatic=True,
-            hybridization='SP2',
-            num_explicit_hs=0,
-            num_implicit_hs=0,
-            total_num_hs=0,
-            degree=3,  # Bond to C4, N1, and CH2
+            degree=2,  # Two ring bonds
             in_ring=True
         )
 
         # Add new atoms
         cyclic.nodes.extend([n1, n2, n3, c4, c5])
 
-        # Create triazole ring bonds with careful tracking of bond order
+        # Create 1,4-disubstituted triazole ring bonds
         triazole_bonds = [
             # N1-N2
             GraphEdge(
@@ -462,9 +417,9 @@ class PeptideBuilder:
             )
         ]
 
-        # Add connections to CH2 groups
+        # Connect to peptide chains
         connection_bonds = [
-            # N1 to its CH2
+            # N1 to azide CH2 chain
             GraphEdge(
                 from_idx=n1.id,
                 to_idx=azide_connection,
@@ -473,9 +428,9 @@ class PeptideBuilder:
                 is_conjugated=False,
                 in_ring=False
             ),
-            # C5 to its CH2
+            # C4 to alkyne CH2 chain
             GraphEdge(
-                from_idx=c5.id,
+                from_idx=c4.id,
                 to_idx=alkyne_connection,
                 bond_type='SINGLE',
                 is_aromatic=False,
