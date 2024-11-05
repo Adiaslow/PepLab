@@ -498,7 +498,7 @@ class PeptideBuilder:
             GraphEdge(
                 from_idx=c4.id,
                 to_idx=alkyne_site.id,
-                bond_type='SINGLE',
+                bond_type='DOUBLE',
                 is_aromatic=True,
                 is_conjugated=True,
                 in_ring=True
