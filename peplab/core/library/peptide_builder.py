@@ -375,11 +375,21 @@ class PeptideBuilder:
 
         cyclic.nodes.extend([n1, n2])
 
-        # Form the triazole ring with proper bond pattern
-        # N=N-N ring system with alternating single/double bonds
-        triazole_bonds = [
+        # First connect azide N to alkyne C with a single bond
+        single_bond = GraphEdge(
+            from_idx=azide_site.id,
+            to_idx=alkyne_site.id,
+            bond_type='SINGLE',
+            is_aromatic=False,
+            is_conjugated=False,
+            in_ring=True,
+            stereo='NONE'
+        )
+
+        # Then form the aromatic ring with the new nitrogens
+        ring_bonds = [
             GraphEdge(
-                from_idx=azide_site.id,
+                from_idx=alkyne_site.id,
                 to_idx=n1.id,
                 bond_type='DOUBLE',
                 is_aromatic=True,
@@ -398,7 +408,7 @@ class PeptideBuilder:
             ),
             GraphEdge(
                 from_idx=n2.id,
-                to_idx=alkyne_site.id,
+                to_idx=azide_site.id,
                 bond_type='DOUBLE',
                 is_aromatic=True,
                 is_conjugated=True,
@@ -407,7 +417,8 @@ class PeptideBuilder:
             )
         ]
 
-        cyclic.edges.extend(triazole_bonds)
+        cyclic.edges.append(single_bond)
+        cyclic.edges.extend(ring_bonds)
 
         # Update properties of original atoms
         for node in cyclic.nodes:
@@ -415,10 +426,10 @@ class PeptideBuilder:
                 node.is_reactive_nuc = False
                 node.aromatic = True
                 node.hybridization = 'SP2'
-                node.degree = 2
+                node.degree = 3  # Now has 3 connections
                 node.in_ring = True
-                node.explicit_valence = 2
-                node.implicit_valence = 2
+                node.explicit_valence = 3
+                node.implicit_valence = 3
                 node.num_explicit_hs = 0
                 node.num_implicit_hs = 0
                 node.total_num_hs = 0
@@ -426,13 +437,13 @@ class PeptideBuilder:
                 node.is_reactive_elec = False
                 node.aromatic = True
                 node.hybridization = 'SP2'
-                node.degree = 2
+                node.degree = 3  # Now has 3 connections
                 node.in_ring = True
                 node.explicit_valence = 3
                 node.implicit_valence = 3
-                node.num_explicit_hs = 1  # SP2 carbon keeps one H
-                node.num_implicit_hs = 1
-                node.total_num_hs = 1
+                node.num_explicit_hs = 0
+                node.num_implicit_hs = 0
+                node.total_num_hs = 0
 
         return self._reindex_graph(cyclic)
 
