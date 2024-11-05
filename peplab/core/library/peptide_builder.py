@@ -325,93 +325,95 @@ class PeptideBuilder:
         # Create new atoms for triazole
         max_id = max(n.id for n in cyclic.nodes)
 
-        # Create ring nitrogens (positions 2 and 3)
-        n2 = GraphNode(
+        # Create N1 of triazole (connected to CH2)
+        n1 = GraphNode(
             id=max_id + 1,
             element='N',
             atomic_num=7,
             formal_charge=0,
-            implicit_valence=3,
+            implicit_valence=2,  # N1 has two single bonds
+            explicit_valence=2,
+            aromatic=True,
+            hybridization='SP2',
+            num_explicit_hs=0,
+            num_implicit_hs=0,
+            total_num_hs=0,
+            degree=2,  # One bond to N2, one to CH2
+            in_ring=True
+        )
+
+        # Create N2 (makes double bond)
+        n2 = GraphNode(
+            id=max_id + 2,
+            element='N',
+            atomic_num=7,
+            formal_charge=0,
+            implicit_valence=2,  # N2 has one single and one double bond
+            explicit_valence=2,
+            aromatic=True,
+            hybridization='SP2',
+            num_explicit_hs=0,
+            num_implicit_hs=0,
+            total_num_hs=0,
+            degree=2,  # One bond to N1, one to N3
+            in_ring=True
+        )
+
+        # Create N3 (connected to C4)
+        n3 = GraphNode(
+            id=max_id + 3,
+            element='N',
+            atomic_num=7,
+            formal_charge=0,
+            implicit_valence=2,  # N3 has two single bonds
+            explicit_valence=2,
+            aromatic=True,
+            hybridization='SP2',
+            num_explicit_hs=0,
+            num_implicit_hs=0,
+            total_num_hs=0,
+            degree=2,  # One bond to N2, one to C4
+            in_ring=True
+        )
+
+        # Create C4 (has one H)
+        c4 = GraphNode(
+            id=max_id + 4,
+            element='C',
+            atomic_num=6,
+            formal_charge=0,
+            implicit_valence=3,  # One single bond to N3, one double bond to C5, one H
+            explicit_valence=3,
+            aromatic=True,
+            hybridization='SP2',
+            num_explicit_hs=1,
+            num_implicit_hs=0,
+            total_num_hs=1,
+            degree=2,  # One bond to N3, one to C5
+            in_ring=True
+        )
+
+        # Create C5 (connected to CH2)
+        c5 = GraphNode(
+            id=max_id + 5,
+            element='C',
+            atomic_num=6,
+            formal_charge=0,
+            implicit_valence=3,  # One double bond to C4, one single bond to N1, one to CH2
             explicit_valence=3,
             aromatic=True,
             hybridization='SP2',
             num_explicit_hs=0,
             num_implicit_hs=0,
             total_num_hs=0,
-            degree=2,
-            in_ring=True
-        )
-
-        n3 = GraphNode(
-            id=max_id + 2,
-            element='N',
-            atomic_num=7,
-            formal_charge=0,
-            implicit_valence=2,
-            explicit_valence=2,
-            aromatic=True,
-            hybridization='SP2',
-            num_explicit_hs=0,
-            num_implicit_hs=0,
-            total_num_hs=0,
-            degree=2,
-            in_ring=True
-        )
-
-        # Create ring carbons
-        c4 = GraphNode(
-            id=max_id + 3,
-            element='C',
-            atomic_num=6,
-            formal_charge=0,
-            implicit_valence=4,
-            explicit_valence=4,
-            aromatic=True,
-            hybridization='SP2',
-            num_explicit_hs=1,
-            num_implicit_hs=0,
-            total_num_hs=1,
-            degree=3,
-            in_ring=True
-        )
-
-        c5 = GraphNode(
-            id=max_id + 4,
-            element='C',
-            atomic_num=6,
-            formal_charge=0,
-            implicit_valence=4,
-            explicit_valence=4,
-            aromatic=True,
-            hybridization='SP2',
-            num_explicit_hs=0,
-            num_implicit_hs=0,
-            total_num_hs=0,
-            degree=3,
-            in_ring=True
-        )
-
-        # Create N1 of triazole
-        n1 = GraphNode(
-            id=max_id + 5,
-            element='N',
-            atomic_num=7,
-            formal_charge=0,
-            implicit_valence=2,
-            explicit_valence=2,
-            aromatic=True,
-            hybridization='SP2',
-            num_explicit_hs=0,
-            num_implicit_hs=0,
-            total_num_hs=0,
-            degree=2,
+            degree=3,  # Bond to C4, N1, and CH2
             in_ring=True
         )
 
         # Add new atoms
         cyclic.nodes.extend([n1, n2, n3, c4, c5])
 
-        # Create triazole ring bonds
+        # Create triazole ring bonds with careful tracking of bond order
         triazole_bonds = [
             # N1-N2
             GraphEdge(
@@ -457,8 +459,12 @@ class PeptideBuilder:
                 is_aromatic=True,
                 is_conjugated=True,
                 in_ring=True
-            ),
-            # Connect N1 to its CH2
+            )
+        ]
+
+        # Add connections to CH2 groups
+        connection_bonds = [
+            # N1 to its CH2
             GraphEdge(
                 from_idx=n1.id,
                 to_idx=azide_connection,
@@ -467,7 +473,7 @@ class PeptideBuilder:
                 is_conjugated=False,
                 in_ring=False
             ),
-            # Connect C5 to its CH2
+            # C5 to its CH2
             GraphEdge(
                 from_idx=c5.id,
                 to_idx=alkyne_connection,
@@ -479,6 +485,7 @@ class PeptideBuilder:
         ]
 
         cyclic.edges.extend(triazole_bonds)
+        cyclic.edges.extend(connection_bonds)
 
         return self._reindex_graph(cyclic)
 
