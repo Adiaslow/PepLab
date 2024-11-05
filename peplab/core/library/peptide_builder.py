@@ -274,59 +274,53 @@ class PeptideBuilder:
         return has_azide and has_alkyne
 
     def click_cyclize_peptide(self, linear_peptide: MolecularGraph) -> MolecularGraph:
-        """Perform click chemistry cyclization between azide and alkyne groups with correct valence."""
-        azide_sites = []
-        alkyne_sites = []
+        """Form triazole ring by directly connecting reactive sites."""
+        # Find reactive sites
+        azide_site = next((n for n in linear_peptide.nodes if n.is_reactive_nuc), None)
+        alkyne_site = next((n for n in linear_peptide.nodes if n.is_reactive_elec), None)
 
-        for node in linear_peptide.nodes:
-            if node.is_reactive_nuc:  # Azide N
-                azide_sites.append(node)
-            if node.is_reactive_elec:  # Alkyne C
-                alkyne_sites.append(node)
+        if not azide_site or not alkyne_site:
+            raise ValueError("Cannot find required reactive sites")
 
-        if not azide_sites or not alkyne_sites:
-            raise ValueError("Cannot find required azide and alkyne groups")
-
-        azide_site = azide_sites[0]
-        alkyne_site = alkyne_sites[0]
         cyclic = copy.deepcopy(linear_peptide)
 
-        # Step 1: Clean up alkyne group
-        alkyne_chain = self._get_alkyne_chain(cyclic, alkyne_site.id)
-        if len(alkyne_chain) != 2:
-            raise ValueError("Invalid alkyne group structure")
+        # Step 1: Remove all nodes and edges connected to reactive sites
+        nodes_to_remove = set()
+        edges_to_remove = set()
 
-        terminal_alkyne = alkyne_chain[1]  # The terminal carbon of alkyne
+        # Find connected nodes to azide site
+        for edge in cyclic.edges:
+            if edge.from_idx == azide_site.id:
+                nodes_to_remove.add(edge.to_idx)
+                edges_to_remove.add(edge)
+            elif edge.to_idx == azide_site.id:
+                nodes_to_remove.add(edge.from_idx)
+                edges_to_remove.add(edge)
 
-        # Remove triple bond and terminal carbon
-        cyclic.edges = [e for e in cyclic.edges if not (
-            (e.from_idx == alkyne_site.id and e.to_idx == terminal_alkyne.id) or
-            (e.from_idx == terminal_alkyne.id and e.to_idx == alkyne_site.id)
-        )]
-        cyclic.nodes = [n for n in cyclic.nodes if n.id != terminal_alkyne.id]
+        # Find connected nodes to alkyne site
+        for edge in cyclic.edges:
+            if edge.from_idx == alkyne_site.id:
+                nodes_to_remove.add(edge.to_idx)
+                edges_to_remove.add(edge)
+            elif edge.to_idx == alkyne_site.id:
+                nodes_to_remove.add(edge.from_idx)
+                edges_to_remove.add(edge)
 
-        # Step 2: Clean up azide group
-        azide_chain = self._get_azide_chain(cyclic, azide_site.id)
-        if len(azide_chain) != 3:
-            raise ValueError("Invalid azide group structure")
+        # Remove found edges and nodes
+        cyclic.edges = [e for e in cyclic.edges if e not in edges_to_remove]
+        cyclic.nodes = [n for n in cyclic.nodes if n.id not in nodes_to_remove]
 
-        # Remove N2 and N3 from azide
-        n2, n3 = azide_chain[1], azide_chain[2]
-        cyclic.nodes = [n for n in cyclic.nodes if n.id not in (n2.id, n3.id)]
-        cyclic.edges = [e for e in cyclic.edges if not (
-            e.from_idx in (n2.id, n3.id) or e.to_idx in (n2.id, n3.id)
-        )]
-
-        # Step 3: Create triazole ring with correct valence
+        # Step 2: Create two new nitrogen atoms for the triazole ring
         max_id = max(n.id for n in cyclic.nodes)
+        n1_id = max_id + 1
+        n2_id = max_id + 2
 
-        # Create two new ring nitrogens with correct valence and hybridization
         n1 = GraphNode(
-            id=max_id + 1,
+            id=n1_id,
             element='N',
             atomic_num=7,
             formal_charge=0,
-            implicit_valence=3,  # Corrected valence for sp2 nitrogen
+            implicit_valence=3,
             explicit_valence=3,
             aromatic=True,
             hybridization='SP2',
@@ -340,11 +334,11 @@ class PeptideBuilder:
         )
 
         n2 = GraphNode(
-            id=max_id + 2,
+            id=n2_id,
             element='N',
             atomic_num=7,
             formal_charge=0,
-            implicit_valence=3,  # Corrected valence for sp2 nitrogen
+            implicit_valence=3,
             explicit_valence=3,
             aromatic=True,
             hybridization='SP2',
@@ -357,9 +351,42 @@ class PeptideBuilder:
             chiral_tag='CHI_UNSPECIFIED'
         )
 
+        # Update properties of original atoms
+        for node in cyclic.nodes:
+            if node.id == azide_site.id:
+                node.is_reactive_nuc = False
+                node.element = 'N'
+                node.atomic_num = 7
+                node.formal_charge = 0
+                node.implicit_valence = 3
+                node.explicit_valence = 3
+                node.aromatic = True
+                node.hybridization = 'SP2'
+                node.num_explicit_hs = 0
+                node.num_implicit_hs = 0
+                node.total_num_hs = 0
+                node.degree = 2
+                node.in_ring = True
+
+            elif node.id == alkyne_site.id:
+                node.is_reactive_elec = False
+                node.element = 'C'
+                node.atomic_num = 6
+                node.formal_charge = 0
+                node.implicit_valence = 3
+                node.explicit_valence = 3
+                node.aromatic = True
+                node.hybridization = 'SP2'
+                node.num_explicit_hs = 0
+                node.num_implicit_hs = 0
+                node.total_num_hs = 0
+                node.degree = 2
+                node.in_ring = True
+
+        # Add new nitrogen atoms
         cyclic.nodes.extend([n1, n2])
 
-        # Form aromatic triazole ring with correct bond orders
+        # Create triazole ring bonds
         ring_bonds = [
             GraphEdge(
                 from_idx=azide_site.id,
@@ -372,7 +399,7 @@ class PeptideBuilder:
             ),
             GraphEdge(
                 from_idx=alkyne_site.id,
-                to_idx=n1.id,
+                to_idx=n1_id,
                 bond_type='SINGLE',
                 is_aromatic=True,
                 is_conjugated=True,
@@ -380,8 +407,8 @@ class PeptideBuilder:
                 stereo='NONE'
             ),
             GraphEdge(
-                from_idx=n1.id,
-                to_idx=n2.id,
+                from_idx=n1_id,
+                to_idx=n2_id,
                 bond_type='DOUBLE',
                 is_aromatic=True,
                 is_conjugated=True,
@@ -389,7 +416,7 @@ class PeptideBuilder:
                 stereo='NONE'
             ),
             GraphEdge(
-                from_idx=n2.id,
+                from_idx=n2_id,
                 to_idx=azide_site.id,
                 bond_type='SINGLE',
                 is_aromatic=True,
@@ -400,31 +427,6 @@ class PeptideBuilder:
         ]
 
         cyclic.edges.extend(ring_bonds)
-
-        # Update properties of original atoms
-        for node in cyclic.nodes:
-            if node.id == azide_site.id:
-                node.is_reactive_nuc = False
-                node.aromatic = True
-                node.hybridization = 'SP2'
-                node.degree = 2
-                node.in_ring = True
-                node.explicit_valence = 3  # Corrected valence
-                node.implicit_valence = 3
-                node.num_explicit_hs = 0
-                node.num_implicit_hs = 0
-                node.total_num_hs = 0
-            elif node.id == alkyne_site.id:
-                node.is_reactive_elec = False
-                node.aromatic = True
-                node.hybridization = 'SP2'
-                node.degree = 2
-                node.in_ring = True
-                node.explicit_valence = 3  # Corrected valence
-                node.implicit_valence = 3
-                node.num_explicit_hs = 0
-                node.num_implicit_hs = 0
-                node.total_num_hs = 0
 
         return self._reindex_graph(cyclic)
 
