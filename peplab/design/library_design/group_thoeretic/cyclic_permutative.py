@@ -44,8 +44,8 @@ class CyclicPermutative:
             if perm not in unique_permutations:
                 unique_permutations.append(perm)
         return unique_permutations
-
-# Example usage
+'''
+EXAMPLE USAGE
 if __name__ == "__main__":
     items = ['a', 'b', 'c']
     
@@ -60,3 +60,4 @@ if __name__ == "__main__":
     # Generate with deduplication and reordering
     cyclic_perms_dedup_sorted = CyclicPermutative.generate_cyclic_permutations(items, deduplicate=True, reorder=True)
     print("Deduplicated and Sorted Cyclic Permutations:", cyclic_perms_dedup_sorted)
+'''
