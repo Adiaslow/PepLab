@@ -1,20 +1,30 @@
 from .base import MolecularEntity, PropertyStore
-from .molecule import Atom, Bond, Residue, Peptide
-from .graph import MoleculeGraph
-from .reaction import ReactiveSite, ReactionMechanism, ReactionPathway
-from .library import PeptideLibrary, LibraryParser
+from .molecule.atom import GraphNode
+from .molecule.bond import GraphEdge
+from .molecule.residue import ResidueInfo
+from .molecule.peptide import PeptideInfo
+
+from .graph.molecule_graph import MolecularGraph
+from .reaction.reactive_site import ReactiveSite
+# from .reaction.reaction_mechanism import ReactionMechanism
+from .reaction.reaction_pathway import ReactionPathway
+from .library.library import LibraryInfo
+from .library.library_parser import LibraryParser
+from .library.peptide_library_generator import PeptideLibraryGenerator
+
 
 __all__ = [
     'MolecularEntity',
     'PropertyStore',
-    'Atom',
-    'Bond',
-    'Residue',
-    'Peptide',
-    'MoleculeGraph',
+    'GraphNode',
+    'GraphEdge',
+    'ResidueInfo',
+    'PeptideInfo',
+    'MolecularGraph',
     'ReactiveSite',
-    'ReactionMechanism',
+    # 'ReactionMechanism',
     'ReactionPathway',
-    'PeptideLibrary',
-    'LibraryParser'
+    'LibraryInfo',
+    'LibraryParser',
+    'PeptideLibraryGenerator'
 ]

@@ -1,3 +1,3 @@
-from .molecule_graph import MoleculeGraph
+from .molecule_graph import MolecularGraph
 
-__all__ = ['MoleculeGraph']
+__all__ = ['MolecularGraph']

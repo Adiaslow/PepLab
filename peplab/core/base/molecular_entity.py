@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Optional
 import uuid
 
-from property_store import PropertyStore
+from .property_store import PropertyStore
 
 class MolecularEntity(ABC):
     """Base class for all molecular entities."""

@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import FrozenSet
 
 from ...analysis.property.reactivity_profile import ReactivityProfile
-from reactivity_type import ReactivityType
+from .reactivity_type import ReactivityType
 
 @dataclass(frozen=True)
 class ReactiveSite:
