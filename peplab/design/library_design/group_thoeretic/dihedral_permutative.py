@@ -13,22 +13,19 @@ class DihedralPermutative:
         n = len(items)
         permutations = []
         
-        # Generate rotations and add them to permutations
+        # Generate all rotations
         for i in range(n):
             rotated = items[i:] + items[:i]
             permutations.append(rotated)
             
-            # Add the reflection of each rotation
+            # Generate reflection of the rotated list
             reflected = rotated[::-1]
             permutations.append(reflected)
         
-        # Remove duplicates by converting to set of tuples, then back to list of lists
-        unique_permutations = [list(x) for x in set(tuple(p) for p in permutations)]
-        return unique_permutations
-'''
-EXAMPLE USAGE
+        return permutations
+
+# Example usage
 if __name__ == "__main__":
-    items = ['a', 'b', 'c']
+    items = [1, 2, 3, 4]
     dihedral_perms = DihedralPermutative.generate_dihedral_permutations(items)
     print("Dihedral Permutations:", dihedral_perms)
-'''
