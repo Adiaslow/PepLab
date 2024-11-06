@@ -119,8 +119,8 @@ class RDKitUtils:
                 atom = Chem.Atom(node['element'])
                 atom.SetFormalCharge(node['formal_charge'])
 
-                # if node['aromatic']:
-                #     atom.SetIsAromatic(True)
+                if node['aromatic']:
+                    atom.SetIsAromatic(True)
 
                 # Set hybridization
                 hyb_str = node['hybridization']
@@ -168,12 +168,11 @@ class RDKitUtils:
 
                 # Set bond properties
                 bond = mol.GetBondBetweenAtoms(begin_idx, end_idx)
-                """
                 if edge['is_aromatic']:
                     bond.SetIsAromatic(True)
                 if edge['is_conjugated']:
                     bond.SetIsConjugated(True)
-                """
+
                 # Set stereochemistry
                 if edge['stereo'] == 'STEREOE':
                     bond.SetStereo(Chem.rdchem.BondStereo.STEREOE)
