@@ -277,6 +277,7 @@ class PeptideBuilder:
         """
         Form triazole ring through copper-catalyzed azide-alkyne cycloaddition (CuAAC).
         Converts terminal azide and alkyne groups into a 1,4-disubstituted 1,2,3-triazole ring.
+        Ensures proper electronic structure and valence states.
         """
         # Find azide and alkyne sites
         azide_site = next((n for n in linear_peptide.nodes if n.is_reactive_nuc), None)
@@ -319,61 +320,77 @@ class PeptideBuilder:
         if alkyne_bond:
             cyclic.edges.remove(alkyne_bond)
 
-        # Form triazole ring:
-        # 1. First alkyne carbon to terminal azide nitrogen (single bond)
-        cyclic.edges.append(GraphEdge(
-            from_idx=alkyne_chain[0].id,
-            to_idx=azide_chain[2].id,
-            bond_type='SINGLE',
-            is_aromatic=True,
-            is_conjugated=True,
-            in_ring=True,
-            stereo='NONE'
-        ))
+        # Remove any hydrogens attached to the reactive sites
+        cyclic = self._remove_h_from_nh(cyclic, azide_site.id)
 
-        # 2. Terminal azide nitrogen to middle azide nitrogen (double bond)
-        cyclic.edges.append(GraphEdge(
-            from_idx=azide_chain[2].id,
-            to_idx=azide_chain[1].id,
-            bond_type='DOUBLE',
-            is_aromatic=True,
-            is_conjugated=True,
-            in_ring=True,
-            stereo='NONE'
-        ))
+        # Update nitrogen formal charges and electron counts
+        for n in azide_chain:
+            n.formal_charge = 0
+            n.implicit_h_count = 0
+            n.explicit_h_count = 0
+            n.electron_count = 5  # Standard nitrogen valence
 
-        # 3. Middle azide nitrogen to first azide nitrogen (single bond)
-        cyclic.edges.append(GraphEdge(
-            from_idx=azide_chain[1].id,
-            to_idx=azide_chain[0].id,
-            bond_type='SINGLE',
-            is_aromatic=True,
-            is_conjugated=True,
-            in_ring=True,
-            stereo='NONE'
-        ))
+        # Update carbon properties
+        for c in alkyne_chain:
+            c.formal_charge = 0
+            c.implicit_h_count = 0
+            c.electron_count = 4  # Standard carbon valence
 
-        # 4. First azide nitrogen to second alkyne carbon (single bond)
-        cyclic.edges.append(GraphEdge(
-            from_idx=azide_chain[0].id,
-            to_idx=alkyne_chain[1].id,
-            bond_type='SINGLE',
-            is_aromatic=True,
-            is_conjugated=True,
-            in_ring=True,
-            stereo='NONE'
-        ))
-
-        # 5. Second alkyne carbon to first alkyne carbon (double bond)
-        cyclic.edges.append(GraphEdge(
-            from_idx=alkyne_chain[1].id,
-            to_idx=alkyne_chain[0].id,
-            bond_type='DOUBLE',
-            is_aromatic=True,
-            is_conjugated=True,
-            in_ring=True,
-            stereo='NONE'
-        ))
+        # Form triazole ring with correct bond orders and electron distribution:
+        # N1-N2=N3-C4=C5
+        # Where N1 is the first azide nitrogen (connected to peptide)
+        cyclic.edges.extend([
+            # N1-N2 (single bond)
+            GraphEdge(
+                from_idx=azide_chain[0].id,
+                to_idx=azide_chain[1].id,
+                bond_type='SINGLE',
+                is_aromatic=True,
+                is_conjugated=True,
+                in_ring=True,
+                stereo='NONE'
+            ),
+            # N2=N3 (double bond)
+            GraphEdge(
+                from_idx=azide_chain[1].id,
+                to_idx=azide_chain[2].id,
+                bond_type='DOUBLE',
+                is_aromatic=True,
+                is_conjugated=True,
+                in_ring=True,
+                stereo='NONE'
+            ),
+            # N3-C4 (single bond)
+            GraphEdge(
+                from_idx=azide_chain[2].id,
+                to_idx=alkyne_chain[0].id,
+                bond_type='SINGLE',
+                is_aromatic=True,
+                is_conjugated=True,
+                in_ring=True,
+                stereo='NONE'
+            ),
+            # C4=C5 (double bond)
+            GraphEdge(
+                from_idx=alkyne_chain[0].id,
+                to_idx=alkyne_chain[1].id,
+                bond_type='DOUBLE',
+                is_aromatic=True,
+                is_conjugated=True,
+                in_ring=True,
+                stereo='NONE'
+            ),
+            # C5-N1 (single bond, completing the ring)
+            GraphEdge(
+                from_idx=alkyne_chain[1].id,
+                to_idx=azide_chain[0].id,
+                bond_type='SINGLE',
+                is_aromatic=True,
+                is_conjugated=True,
+                in_ring=True,
+                stereo='NONE'
+            )
+        ])
 
         # Update atom properties
         for node in cyclic.nodes:
@@ -385,6 +402,11 @@ class PeptideBuilder:
             # Set aromatic flag for triazole ring atoms
             if node.id in [n.id for n in azide_chain + alkyne_chain]:
                 node.is_aromatic = True
+                # Ensure proper valence for ring atoms
+                if node.element == 'N':
+                    node.valence = 3
+                elif node.element == 'C':
+                    node.valence = 4
 
         return self._reindex_graph(cyclic)
 
