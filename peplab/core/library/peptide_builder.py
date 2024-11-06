@@ -427,7 +427,7 @@ class PeptideBuilder:
                 node.explicit_h_count = 0
                 node.formal_charge = 0
                 node.is_aromatic = False  # Explicitly set to non-aromatic
-
+                node.is_conjugated = False  # Explicitly set to non-conjugated
                 if node.element == 'N':
                     node.valence = 3
                 elif node.element == 'C':
