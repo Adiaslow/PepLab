@@ -276,7 +276,7 @@ class PeptideBuilder:
     def click_cyclize_peptide(self, linear_peptide: MolecularGraph) -> MolecularGraph:
         """
         Form triazole ring through copper-catalyzed azide-alkyne cycloaddition (CuAAC).
-        Creates a 1,4-disubstituted 1,2,3-triazole ring with proper valence and kekulization.
+        Creates a 1,4-disubstituted 1,2,3-triazole ring with simple double bonds.
         """
         cyclic = copy.deepcopy(linear_peptide)
 
@@ -363,47 +363,48 @@ class PeptideBuilder:
                 if node_to_remove in cyclic.nodes:
                     cyclic.nodes.remove(node_to_remove)
 
-        # Create the triazole ring with proper bond pattern
+        # Create the triazole ring with just two double bonds
+        # Pattern: N1-N2=N3-C4=C5-N1
         new_edges = [
-            GraphEdge(
-                from_idx=azide_chain[0].id,  # N1
-                to_idx=azide_chain[1].id,    # N2
+            GraphEdge(  # N1-N2
+                from_idx=azide_chain[0].id,
+                to_idx=azide_chain[1].id,
                 bond_type='SINGLE',
                 is_aromatic=False,
                 is_conjugated=False,
                 in_ring=True,
                 stereo='NONE'
             ),
-            GraphEdge(
-                from_idx=azide_chain[1].id,  # N2
-                to_idx=azide_chain[2].id,    # N3
+            GraphEdge(  # N2=N3
+                from_idx=azide_chain[1].id,
+                to_idx=azide_chain[2].id,
                 bond_type='DOUBLE',
                 is_aromatic=False,
                 is_conjugated=False,
                 in_ring=True,
                 stereo='NONE'
             ),
-            GraphEdge(
-                from_idx=azide_chain[2].id,  # N3
-                to_idx=alkyne_chain[0].id,   # C4
+            GraphEdge(  # N3-C4
+                from_idx=azide_chain[2].id,
+                to_idx=alkyne_chain[0].id,
                 bond_type='SINGLE',
                 is_aromatic=False,
                 is_conjugated=False,
                 in_ring=True,
                 stereo='NONE'
             ),
-            GraphEdge(
-                from_idx=alkyne_chain[0].id, # C4
-                to_idx=alkyne_chain[1].id,   # C5
+            GraphEdge(  # C4=C5
+                from_idx=alkyne_chain[0].id,
+                to_idx=alkyne_chain[1].id,
                 bond_type='DOUBLE',
                 is_aromatic=False,
                 is_conjugated=False,
                 in_ring=True,
                 stereo='NONE'
             ),
-            GraphEdge(
-                from_idx=alkyne_chain[1].id, # C5
-                to_idx=azide_chain[0].id,    # N1
+            GraphEdge(  # C5-N1
+                from_idx=alkyne_chain[1].id,
+                to_idx=azide_chain[0].id,
                 bond_type='SINGLE',
                 is_aromatic=False,
                 is_conjugated=False,
@@ -425,6 +426,7 @@ class PeptideBuilder:
                 node.implicit_h_count = 0
                 node.explicit_h_count = 0
                 node.formal_charge = 0
+                node.is_aromatic = False  # Explicitly set to non-aromatic
 
                 if node.element == 'N':
                     node.valence = 3
