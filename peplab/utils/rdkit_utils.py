@@ -119,8 +119,8 @@ class RDKitUtils:
                 atom = Chem.Atom(node['element'])
                 atom.SetFormalCharge(node['formal_charge'])
 
-                if node['aromatic']:
-                    atom.SetIsAromatic(True)
+                # if node['aromatic']:
+                #     atom.SetIsAromatic(True)
 
                 # Set hybridization
                 hyb_str = node['hybridization']
