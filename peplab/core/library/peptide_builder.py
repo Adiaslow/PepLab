@@ -287,122 +287,151 @@ class PeptideBuilder:
         if not azide_site or not alkyne_site:
             raise ValueError("Cannot find required reactive sites")
 
-        # Remove all H atoms from reactive sites and their neighbors
-        def remove_all_hydrogens(node_id):
+        # Find the complete azide chain
+        azide_chain = []
+        current = azide_site
+        while len(azide_chain) < 3:
+            azide_chain.append(current)
+            for edge in cyclic.edges:
+                if edge.from_idx == current.id:
+                    next_node = next((n for n in cyclic.nodes if n.id == edge.to_idx
+                                    and n.element == 'N' and n not in azide_chain), None)
+                    if next_node:
+                        current = next_node
+                        break
+                elif edge.to_idx == current.id:
+                    next_node = next((n for n in cyclic.nodes if n.id == edge.from_idx
+                                    and n.element == 'N' and n not in azide_chain), None)
+                    if next_node:
+                        current = next_node
+                        break
+            else:
+                break
+
+        # Find the alkyne carbons
+        alkyne_chain = []
+        current = alkyne_site
+        for edge in cyclic.edges:
+            if edge.bond_type == 'TRIPLE':
+                if edge.from_idx == current.id:
+                    next_node = next((n for n in cyclic.nodes if n.id == edge.to_idx
+                                    and n.element == 'C'), None)
+                    if next_node:
+                        alkyne_chain = [current, next_node]
+                        break
+                elif edge.to_idx == current.id:
+                    next_node = next((n for n in cyclic.nodes if n.id == edge.from_idx
+                                    and n.element == 'C'), None)
+                    if next_node:
+                        alkyne_chain = [current, next_node]
+                        break
+
+        if len(azide_chain) != 3 or len(alkyne_chain) != 2:
+            raise ValueError("Could not find complete azide or alkyne groups")
+
+        # Remove all existing bonds between atoms in the chains
+        edges_to_remove = []
+        for edge in cyclic.edges:
+            from_in_azide = any(n.id == edge.from_idx for n in azide_chain)
+            to_in_azide = any(n.id == edge.to_idx for n in azide_chain)
+            from_in_alkyne = any(n.id == edge.from_idx for n in alkyne_chain)
+            to_in_alkyne = any(n.id == edge.to_idx for n in alkyne_chain)
+
+            if (from_in_azide and to_in_azide) or (from_in_alkyne and to_in_alkyne):
+                edges_to_remove.append(edge)
+
+        for edge in edges_to_remove:
+            if edge in cyclic.edges:
+                cyclic.edges.remove(edge)
+
+        # Remove hydrogens from all atoms involved
+        for node in azide_chain + alkyne_chain:
             edges_to_remove = []
             nodes_to_remove = []
-
-            # Find all H atoms connected to this node
             for edge in cyclic.edges:
-                if edge.from_idx == node_id or edge.to_idx == node_id:
-                    other_id = edge.to_idx if edge.from_idx == node_id else edge.from_idx
-                    node = next((n for n in cyclic.nodes if n.id == other_id), None)
-                    if node and node.element == 'H':
+                if edge.from_idx == node.id or edge.to_idx == node.id:
+                    other_id = edge.to_idx if edge.from_idx == node.id else edge.from_idx
+                    other_node = next((n for n in cyclic.nodes if n.id == other_id), None)
+                    if other_node and other_node.element == 'H':
                         edges_to_remove.append(edge)
-                        nodes_to_remove.append(node)
+                        nodes_to_remove.append(other_node)
 
-            # Remove found H atoms and their bonds
             for edge in edges_to_remove:
                 if edge in cyclic.edges:
                     cyclic.edges.remove(edge)
-            for node in nodes_to_remove:
-                if node in cyclic.nodes:
-                    cyclic.nodes.remove(node)
+            for node_to_remove in nodes_to_remove:
+                if node_to_remove in cyclic.nodes:
+                    cyclic.nodes.remove(node_to_remove)
 
-        remove_all_hydrogens(azide_site.id)
-        remove_all_hydrogens(alkyne_site.id)
-
-        # Clear any existing bonds between reactive sites or their immediate neighbors
-        def remove_existing_reactive_bonds(site_id):
-            edges_to_remove = []
-            for edge in cyclic.edges:
-                if edge.from_idx == site_id or edge.to_idx == site_id:
-                    edges_to_remove.append(edge)
-            for edge in edges_to_remove:
-                if edge in cyclic.edges:
-                    cyclic.edges.remove(edge)
-
-        remove_existing_reactive_bonds(azide_site.id)
-        remove_existing_reactive_bonds(alkyne_site.id)
-
-        # Create the triazole ring with correct bond orders and valences
-        # We'll create a simple 5-membered ring with alternating single/double bonds
-        cyclic.edges.extend([
-            # N1-N2 (single bond)
+        # Create the triazole ring with proper bond pattern
+        new_edges = [
             GraphEdge(
-                from_idx=azide_site.id,
-                to_idx=azide_site.id + 1,
+                from_idx=azide_chain[0].id,  # N1
+                to_idx=azide_chain[1].id,    # N2
                 bond_type='SINGLE',
                 is_aromatic=False,
                 is_conjugated=True,
                 in_ring=True,
                 stereo='NONE'
             ),
-            # N2=N3 (double bond)
             GraphEdge(
-                from_idx=azide_site.id + 1,
-                to_idx=azide_site.id + 2,
+                from_idx=azide_chain[1].id,  # N2
+                to_idx=azide_chain[2].id,    # N3
                 bond_type='DOUBLE',
                 is_aromatic=False,
                 is_conjugated=True,
                 in_ring=True,
                 stereo='NONE'
             ),
-            # N3-C4 (single bond)
             GraphEdge(
-                from_idx=azide_site.id + 2,
-                to_idx=alkyne_site.id,
+                from_idx=azide_chain[2].id,  # N3
+                to_idx=alkyne_chain[0].id,   # C4
                 bond_type='SINGLE',
                 is_aromatic=False,
                 is_conjugated=True,
                 in_ring=True,
                 stereo='NONE'
             ),
-            # C4=C5 (double bond)
             GraphEdge(
-                from_idx=alkyne_site.id,
-                to_idx=alkyne_site.id + 1,
+                from_idx=alkyne_chain[0].id, # C4
+                to_idx=alkyne_chain[1].id,   # C5
                 bond_type='DOUBLE',
                 is_aromatic=False,
                 is_conjugated=True,
                 in_ring=True,
                 stereo='NONE'
             ),
-            # C5-N1 (single bond, completing the ring)
             GraphEdge(
-                from_idx=alkyne_site.id + 1,
-                to_idx=azide_site.id,
+                from_idx=alkyne_chain[1].id, # C5
+                to_idx=azide_chain[0].id,    # N1
                 bond_type='SINGLE',
                 is_aromatic=False,
                 is_conjugated=True,
                 in_ring=True,
                 stereo='NONE'
             )
-        ])
-
-        # Update properties for all atoms in the ring
-        ring_atoms = [
-            azide_site.id,
-            azide_site.id + 1,
-            azide_site.id + 2,
-            alkyne_site.id,
-            alkyne_site.id + 1
         ]
 
+        # Add new bonds after verifying they don't already exist
+        for new_edge in new_edges:
+            if not any(e.from_idx == new_edge.from_idx and e.to_idx == new_edge.to_idx for e in cyclic.edges):
+                cyclic.edges.append(new_edge)
+
+        # Update atomic properties
         for node in cyclic.nodes:
-            if node.id in ring_atoms:
+            if node in azide_chain or node in alkyne_chain:
                 node.is_reactive_nuc = False
                 node.is_reactive_elec = False
-                node.formal_charge = 0
                 node.implicit_h_count = 0
                 node.explicit_h_count = 0
+                node.formal_charge = 0
 
                 if node.element == 'N':
                     node.valence = 3
                 elif node.element == 'C':
                     node.valence = 4
 
-        # Clean up the graph
+        # Reindex and clean up the graph
         return self._reindex_graph(cyclic)
 
     def _get_azide_chain(self, graph: MolecularGraph, start_id: int) -> List[GraphNode]:
