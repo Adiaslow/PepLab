@@ -370,7 +370,7 @@ class PeptideBuilder:
                 to_idx=azide_chain[1].id,    # N2
                 bond_type='SINGLE',
                 is_aromatic=False,
-                is_conjugated=True,
+                is_conjugated=False,
                 in_ring=True,
                 stereo='NONE'
             ),
@@ -379,7 +379,7 @@ class PeptideBuilder:
                 to_idx=azide_chain[2].id,    # N3
                 bond_type='DOUBLE',
                 is_aromatic=False,
-                is_conjugated=True,
+                is_conjugated=False,
                 in_ring=True,
                 stereo='NONE'
             ),
@@ -388,7 +388,7 @@ class PeptideBuilder:
                 to_idx=alkyne_chain[0].id,   # C4
                 bond_type='SINGLE',
                 is_aromatic=False,
-                is_conjugated=True,
+                is_conjugated=False,
                 in_ring=True,
                 stereo='NONE'
             ),
@@ -397,7 +397,7 @@ class PeptideBuilder:
                 to_idx=alkyne_chain[1].id,   # C5
                 bond_type='DOUBLE',
                 is_aromatic=False,
-                is_conjugated=True,
+                is_conjugated=False,
                 in_ring=True,
                 stereo='NONE'
             ),
@@ -406,7 +406,7 @@ class PeptideBuilder:
                 to_idx=azide_chain[0].id,    # N1
                 bond_type='SINGLE',
                 is_aromatic=False,
-                is_conjugated=True,
+                is_conjugated=False,
                 in_ring=True,
                 stereo='NONE'
             )
