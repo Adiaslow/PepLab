@@ -386,7 +386,7 @@ class PeptideBuilder:
             formal_charge=0,
             implicit_valence=3,  # Changed to 3 for N2 (makes double bond)
             explicit_valence=3,
-            aromatic=False,
+            aromatic=True,
             hybridization='SP2',
             num_explicit_hs=0,
             num_implicit_hs=0,
@@ -402,7 +402,7 @@ class PeptideBuilder:
             formal_charge=0,
             implicit_valence=2,  # Stays 2 for N3 (single bonds only)
             explicit_valence=2,
-            aromatic=False,
+            aromatic=True,
             hybridization='SP2',
             num_explicit_hs=0,
             num_implicit_hs=0,
@@ -419,7 +419,7 @@ class PeptideBuilder:
             formal_charge=0,
             implicit_valence=4,  # Changed to 4 for C4 (makes double bond)
             explicit_valence=4,
-            aromatic=False,
+            aromatic=True,
             hybridization='SP2',
             num_explicit_hs=1,
             num_implicit_hs=0,
@@ -437,7 +437,7 @@ class PeptideBuilder:
                 node.formal_charge = 0
                 node.implicit_valence = 4  # Changed to 4 (makes double bond + connection to peptide)
                 node.explicit_valence = 4
-                node.aromatic = False
+                node.aromatic = True
                 node.hybridization = 'SP2'
                 node.num_explicit_hs = 0
                 node.num_implicit_hs = 0,
@@ -454,7 +454,7 @@ class PeptideBuilder:
                 node.formal_charge = 0
                 node.implicit_valence = 2  # Stays 2 (two single bonds)
                 node.explicit_valence = 2
-                node.aromatic = False
+                node.aromatic = True
                 node.hybridization = 'SP2'
                 node.num_explicit_hs = 0
                 node.num_implicit_hs = 0
@@ -471,12 +471,12 @@ class PeptideBuilder:
                 node.formal_charge = 0
                 node.implicit_valence =3
                 node.explicit_valence = 3
-                node.aromatic = False
+                node.aromatic = True
                 node.hybridization = 'SP2'
                 node.num_explicit_hs = 0
                 node.num_implicit_hs = 0
                 node.total_num_hs = 0
-                node.degree = 3
+                node.degree = 3  # Changed to 3 to account for peptide connection
                 node.in_ring = True
 
         # Update azide site to ring nitrogen (position 1)
@@ -488,7 +488,7 @@ class PeptideBuilder:
                 node.formal_charge = 0
                 node.implicit_valence =2
                 node.explicit_valence = 2
-                node.aromatic = False
+                node.aromatic = True
                 node.hybridization = 'SP2'
                 node.num_explicit_hs = 0
                 node.num_implicit_hs = 0
