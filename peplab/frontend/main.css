@@ -1,0 +1,824 @@
+/* Light theme colors */
+:root {
+    --base-color: rgba(242, 242, 242, 1);
+    --base-color-darker: rgba(212, 212, 212, 1);
+    --button-color: rgba(232, 232, 232, 1);
+    --container-color: rgba(232, 232, 232, 1);
+    --text-color: #555555;
+    --alt-text-color: #bbbbbb;
+    --shadow-light: rgba(255, 255, 255, 1.0);
+    --shadow-dark: rgba(102, 102, 102, 1.0);
+    --border-highlight: rgba(255, 255, 255, 0.1);
+}
+
+/* Dark theme colors */
+[data-theme="dark"] {
+    --base-color: rgba(52, 52, 52, 1);
+    --base-color-darker: rgba(12, 12, 12, 1);
+    --button-color: rgba(32, 32, 32, 1);
+    --container-color: rgba(32, 32, 32, 1);
+    --text-color: #aaaaaa;
+    --alt-text-color: #555555;
+    --shadow-light: rgba(255, 255, 255, 0.1);
+    --shadow-dark: rgba(0, 0, 0, 1.0);
+    --border-highlight: rgba(255, 255, 255, 0.05);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    transition: background-color 0.6s ease,
+                    color 0.6s ease,
+                    border-color 0.6s ease,
+                    box-shadow 0.6s ease;
+}
+
+
+.renderer.domElement {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: -1;
+}
+
+body {
+    font-family: "CartographCF-ThinItalic", sans-serif !important;
+    color: var(--text-color);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 70px 20px 20px 20px;
+    position: relative;
+    margin: 0;
+    width: 100%;
+    // transition: color 0.6s ease;
+}
+
+/* Add a pseudo-element for the gradient background */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, rgba(242, 242, 242, 1), rgba(212, 212, 212, 1));
+    transition: opacity 0.6s ease;
+    z-index: -2;
+}
+
+/* Add another pseudo-element for the dark gradient */
+body::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, rgba(52, 52, 52, 1), rgba(12, 12, 12, 1));
+    opacity: 0;
+    transition: opacity 0.6s ease;
+    z-index: -2;
+}
+
+p {
+    font-family: "CartographCF-Thin", sans-serif !important;
+    background: var(--base-color);
+    color: var(--text-color);
+}
+
+/* Header Bar Styles */
+.logo {
+    position: fixed;
+    top: 0;
+    left: 0;
+    padding: 20px;
+    width: 100%;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 40px;
+}
+
+.logo h1 {
+    margin: 0;
+    font-family: "CartographCF-Thin", sans-serif !important;
+    font-weight: bold !important;
+    font-size: 2.5rem;
+    color: var(--alt-text-color);
+    width: fit-content; /* Contains text width */
+    margin-left: 20px; /* Adds spacing from the left edge */
+}
+
+.logo svg {
+    position: fixed;
+    top: -15px;
+    left: 40px;
+    width: 150px;
+    z-index: 1000;
+    fill: var(--alt-text-color);
+    opacity: 0.5;
+    transition: all 0.6s ease;
+}
+
+.brand {
+    position: absolute;
+    top: 50%;
+    right: 20px;
+    transform: translateY(-50%);
+    font-family: "CartographCF-Bold", sans-serif !important;
+    font-size: 1.2rem;
+    color: var(--text-color);
+}
+
+.container {
+    min-width: 280px;
+    max-width: 90%;
+    width: fit-content;
+    height: fit-content;
+    padding: 30px;
+    margin: 20px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 20px;
+    background: var(--container-color);
+    box-shadow:
+        0px 0px 0px var(--shadow-dark),
+        0px 0px 0px var(--shadow-light),
+        inset 2px 2px 5px var(--shadow-dark),
+        inset -2px -2px 5px var(--shadow-light);
+    transition: all 0.5s ease;
+}
+
+.container.morphing {
+    // opacity: 0.7;
+}
+
+.route-content {
+    width: 100%;
+    opacity: 1;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.6s ease;
+}
+
+.route-content.fade-out {
+    opacity: 0;
+}
+
+.container h1:first-of-type {
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+button {
+    width: calc(100% - 40px);
+    min-width: 50px;
+    max-width: 300px;
+    padding: 15px;
+    margin: 20px;
+    border: none;
+    border-radius: 12px;
+    background: var(--button-color);
+    color: var(--text-color);
+    font-family: "CartographCF-Thin", sans-serif !important;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow:
+        5px 5px 10px var(--shadow-dark),
+        -5px -5px 10px var(--shadow-light),
+        inset 0px 0px 0px var(--shadow-dark),
+        inset 0px 0px 0px var(--shadow-light);
+    transition:
+        background 0.5s ease,
+        color 0.5s ease,
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
+
+    /* Add animation properties */
+    opacity: 0;
+    animation: fadeIn 0.6s ease forwards;
+    animation-delay: 0.3s;
+}
+
+button:hover {
+    box-shadow:
+        3px 3px 6px var(--shadow-dark),
+        -3px -3px 6px var(--shadow-light),
+        inset 0px 0px 0px var(--shadow-dark),
+        inset 0px 0px 0px var(--shadow-light);
+    transform: translateY(1px);
+}
+
+button:active {
+    box-shadow:
+        0px 0px 0px var(--shadow-dark),
+        0px 0px 0px var(--shadow-light),
+        inset 2px 2px 5px var(--shadow-dark),
+        inset -2px -2px 5px var(--shadow-light);
+    transform: translateY(4px);
+}
+
+h1 {
+    font-family: "CartographCF-Bold", sans-serif !important;
+    font-weight: bold !important;
+    margin-bottom: 30px;
+    text-align: center;
+    color: var(--text-color);
+}
+
+.input-group {
+    margin: 20px;
+    padding: 20px;
+    border-radius: 15px;
+    background: var(--base-color);
+    box-shadow:
+        inset 4px 4px 8px var(--shadow-dark),
+        inset -4px -4px 8px var(--shadow-light);
+}
+
+input {
+    width: 100%;
+    padding: 15px;
+    margin: 20px;
+    border: none;
+    border-radius: 12px;
+    background: var(--base-color);
+    box-shadow:
+        inset 2px 2px 5px var(--shadow-dark),
+        inset -2px -2px 5px var(--shadow-light);
+    color: var(--text-color);
+    font-size: 16px;
+}
+
+.results {
+    margin: 20px;
+    padding: 20px;
+    border-radius: 15px;
+    background: var(--base-color);
+    box-shadow:
+        inset 4px 4px 8px var(--shadow-dark),
+        inset -4px -4px 8px var(--shadow-light);
+}
+
+.container button {
+    margin: 20px;
+}
+
+.container button:last-child {
+    margin: 20px;
+}
+
+.hamburger {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 20px;
+    border-radius: 20px;
+    background: var(--base-color);
+    z-index: 1000;
+    border: none;
+    cursor: pointer;
+    width: 65px;
+    height: 65px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: right;
+    box-shadow:
+        0px 0px 0px var(--shadow-dark),
+        0px 0px 0px var(--shadow-light),
+        inset 2px 2px 5px var(--shadow-dark),
+        inset -2px -2px 5px var(--shadow-light);
+    transform: translateY(0);
+    transition: all 0.5s ease;
+}
+
+.hamburger .menu-content {
+    display: flex;
+    flex-direction: column;
+    align-items: right;
+    width: 25px;
+}
+
+.hamburger .line {
+    width: 25px;
+    height: 2px;
+    background: var(--text-color);
+    margin: 4px 0;
+    transition: all 0.3s ease;
+}
+
+.hamburger .nav-links {
+    position: absolute;
+    top: 45px;
+    left: 0;
+    right: 0;
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+}
+
+.hamburger:hover {
+    box-shadow:
+        0px 0px 0px var(--shadow-dark),
+        0px 0px 0px var(--shadow-light),
+        inset 2px 2px 5px var(--shadow-dark),
+        inset -2px -2px 5px var(--shadow-light);
+    transform: translateY(0);
+}
+
+.hamburger:active {
+    transform: translateY(0px);
+}
+
+.hamburger.active {
+    height: 410px;
+    width: 150px;
+    box-shadow:
+        0px 0px 0px var(--shadow-dark),
+        0px 0px 0px var(--shadow-light),
+        inset 2px 2px 5px var(--shadow-dark),
+        inset -2px -2px 5px var(--shadow-light);
+    transform: translateY(0px);
+}
+
+.hamburger .nav-links {
+    position: absolute;
+    top: 45px;
+    left: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.4s all;
+    pointer-events: none;
+}
+
+.hamburger.active .nav-links {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+/* Add fade effect to individual links */
+.nav-links a {
+    color: var(--text-color);
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-family: "CartographCF-Thin", sans-serif;
+    // transition: all 0.3s all;
+    text-align: right;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateY(-10px);
+}
+
+.hamburger.active .nav-links a {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Stagger the fade in/out of each link */
+.hamburger.active .nav-links a:nth-child(1) { transition-delay: 0.1s; }
+.hamburger.active .nav-links a:nth-child(2) { transition-delay: 0.15s; }
+.hamburger.active .nav-links a:nth-child(3) { transition-delay: 0.2s; }
+.hamburger.active .nav-links a:nth-child(4) { transition-delay: 0.25s; }
+.hamburger.active .nav-links a:nth-child(5) { transition-delay: 0.3s; }
+.hamburger.active .nav-links a:nth-child(6) { transition-delay: 0.35s; }
+.hamburger.active .nav-links a:nth-child(7) { transition-delay: 0.4s; }
+.hamburger.active .nav-links a:nth-child(8) { transition-delay: 0.45s; }
+
+/* Add fade out delays when closing */
+.hamburger:not(.active) .nav-links a:nth-child(1) { transition-delay: 0.0s; }
+.hamburger:not(.active) .nav-links a:nth-child(2) { transition-delay: 0.0s; }
+.hamburger:not(.active) .nav-links a:nth-child(3) { transition-delay: 0.0s; }
+.hamburger:not(.active) .nav-links a:nth-child(4) { transition-delay: 0.0s; }
+
+
+.hamburger.active .line:nth-child(1) {
+    transform: rotate(45deg) translate(7px, 7px);
+}
+
+.hamburger.active .line:nth-child(2) {
+    opacity: 0;
+}
+
+.hamburger.active .line:nth-child(3) {
+    transform: rotate(-45deg) translate(7px, -7px);
+}
+
+.nav-links a {
+    color: var(--text-color);
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-family: "CartographCF-Thin", sans-serif;
+    transition: all 0.2s ease;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.nav-links a:hover {
+    transform: translateY(1px);
+}
+
+nav {
+    position: fixed;
+    top: 80px;
+    right: 10px;
+    padding: 15px;
+    border-radius: 12px;
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 1000;
+}
+
+nav.active {
+    display: flex;
+    transform: translateY(4px);
+}
+
+nav a {
+    color: var(--text-color);
+    text-decoration: none;
+    padding: 10px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    font-family: "CartographCF-Thin", sans-serif;
+}
+
+nav a:hover {
+}
+
+.theme-switch {
+    position: fixed;
+    bottom: 40px;
+    right: 40px;
+    width: 60px;
+    height: 30px;
+    border-radius: 15px;
+    background: var(--base-color-darker);
+    box-shadow:
+        0px 0px 0px var(--shadow-dark),
+        0px 0px 0px var(--shadow-light),
+        inset 2px 2px 5px var(--shadow-dark),
+        inset -2px -2px 5px var(--shadow-light);
+    cursor: pointer;
+    padding: 3px;
+    transition: all 0.3s ease;
+    margin: 0;
+    opacity: 1.0;
+}
+
+.theme-switch::after {
+    content: '🔆';
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #fff, var(--base-color));
+    box-shadow:
+        3px 3px 5px var(--shadow-dark),
+        -1px -1px 3px var(--shadow-light),
+        inset -2px -2px 3px var(--shadow-dark),
+        inset 2px 2px 3px var(--shadow-light);
+    top: 3.5px;
+    left: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition:
+    all 0.6s ease;
+}
+
+.theme-switch.active::after {
+    content: '🌙';
+    background: radial-gradient(circle at 30% 30%, #444, var(--base-color));
+        box-shadow:
+            3px 3px 5px var(--shadow-dark),
+            -1px -1px 3px var(--shadow-light),
+            inset 2px 2px 3px var(--shadow-light),
+            inset -2px -2px 3px var(--shadow-dark);
+    transform: translateX(30px);
+}
+
+/* For dark theme */
+[data-theme="dark"] .theme-switch {
+    background: var(--base-color-darker);
+}
+
+[data-theme="dark"] .theme-switch::after {
+    background: var(--base-color-darker);
+    color: var(--alt-text-color);
+}
+
+/* For light theme */
+[data-theme="light"] .theme-switch {
+    background: var(--base-color-darker);
+}
+
+[data-theme="light"] .theme-switch::after {
+    background: var(--base-color);
+    color: var(--alt-text-color);
+}
+
+/* Change opacity for dark theme */
+[data-theme="dark"] body::before {
+    opacity: 0;
+}
+
+[data-theme="dark"] body::after {
+    opacity: 1;
+}
+
+
+.theme-switch:hover {
+
+}
+
+.theme-switch:active::after {
+}
+
+.settings-toggle-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 15px 0;
+    padding: 10px;
+    border-radius: 12px;
+    background: var(--base-color);
+    box-shadow:
+        inset 2px 2px 5px var(--shadow-dark),
+        inset -2px -2px 5px var(--shadow-light);
+}
+
+.settings-label {
+    font-family: "CartographCF-Thin", sans-serif;
+    color: var(--text-color);
+    font-size: 16px;
+}
+
+.settings-toggle {
+    position: relative;
+    width: 60px;
+    height: 30px;
+    border-radius: 15px;
+    background: var(--base-color);
+    box-shadow:
+        0px 0px 0px var(--shadow-dark),
+        0px 0px 0px var(--shadow-light),
+        inset 2px 2px 5px var(--shadow-dark),
+        inset -2px -2px 5px var(--shadow-light);
+    cursor: pointer;
+    padding: 3px;
+    transition: all 0.3s ease;
+}
+
+.settings-toggle::after {
+    content: '';
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #fff, var(--base-color));
+    box-shadow:
+        3px 3px 5px var(--shadow-dark),
+        -1px -1px 3px var(--shadow-light),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.2);
+    top: 2px;
+    left: 2px;
+    transition: all 0.5s ease;
+}
+
+.settings-toggle.active::after {
+    background: radial-gradient(circle at 30% 30%, #444, var(--base-color));
+    transform: translateX(30px);
+}
+
+.dropdown {
+    position: relative;
+    min-width: 280px;
+    max-width: 90%;
+    margin: 20px;
+    font-family: "CartographCF-Thin", sans-serif;
+}
+
+.dropdown-trigger {
+    width: 100%;
+    padding: 15px;
+    margin: 20px;
+    border: none;
+    border-radius: 12px;
+    background: var(--button-color);
+    color: var(--text-color);
+    font-family: "CartographCF-Thin", sans-serif;
+    font-size: 16px;
+    cursor: pointer;
+    text-align: right;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow:
+        5px 5px 10px var(--shadow-dark),
+        -5px -5px 10px var(--shadow-light);
+    transition: all 0.3s ease;
+}
+
+.dropdown-trigger:hover {
+    box-shadow:
+        3px 3px 6px var(--shadow-dark),
+        -3px -3px 6px var(--shadow-light);
+    transform: translateY(1px);
+}
+
+.dropdown-trigger.active {
+    box-shadow:
+        0px 0px 0px var(--shadow-dark),
+        0px 0px 0px var(--shadow-light),
+        inset 2px 2px 5px var(--shadow-dark),
+        inset -2px -2px 5px var(--shadow-light);
+}
+
+.dropdown-content {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 12px;
+    background: var(--button-color);
+    box-shadow:
+        5px 5px 10px var(--shadow-dark),
+        -5px -5px 10px var(--shadow-light);
+    display: none;
+    flex-direction: column;
+    text-align: right;
+    gap: 10px;
+    z-index: 1000;
+}
+
+.dropdown-content.active {
+    display: flex;
+}
+
+.dropdown-item {
+    color: var(--text-color);
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.dropdown-item:hover {
+    transform: translateY(1px);
+}
+
+.dropdown-item.selected {
+    background: var(--base-color);
+    box-shadow:
+        inset 2px 2px 5px var(--shadow-dark),
+        inset -2px -2px 5px var(--shadow-light);
+}
+
+.menu-content {
+    display: flex;
+    flex-direction: column;
+    align-items: right;
+    width: 25px;
+}
+
+.menu-content .line {
+    width: 25px;
+    height: 2px;
+    background: var(--text-color);
+    margin: 4px 0;
+    transition: all 0.3s ease;
+}
+
+.dropdown-trigger.active .line:nth-child(1) {
+    transform: rotate(45deg) translate(7px, 7px);
+}
+
+.dropdown-trigger.active .line:nth-child(2) {
+    opacity: 0;
+}
+
+.dropdown-trigger.active .line:nth-child(3) {
+    transform: rotate(-45deg) translate(7px, -7px);
+}
+
+.library-options {
+    width: 100%;
+}
+
+.library-options .dropdown {
+    margin: 0;
+    width: 100%;
+}
+
+/* Fonts */
+@font-face {
+    font-family: "CartographCF-Bold";
+    src: url("./fonts/CartographCF-Bold.otf") format("opentype");
+}
+
+@font-face {
+    font-family: "CartographCF-BoldItalic";
+    src: url("./fonts/CartographCF-BoldItalic.otf") format("opentype");
+}
+
+@font-face {
+    font-family: "CartographCF-DemiBold";
+    src: url("./fonts/CartographCF-DemiBold.otf") format("opentype");
+}
+
+@font-face {
+    font-family: "CartographCF-DemiBoldItalic";
+    src: url("./fonts/CartographCF-DemiBoldItalic.otf") format("opentype");
+}
+
+@font-face {
+    font-family: "CartographCF-ExtraBold";
+    src: url("./fonts/CartographCF-ExtraBold.otf") format("opentype");
+}
+
+@font-face {
+    font-family: "CartographCF-ExtraBoldItalic";
+    src: url("./fonts/CartographCF-ExtraBoldItalic.otf") format("opentype");
+}
+
+@font-face {
+    font-family: "CartographCF-ExtraLight";
+    src: url("./fonts/CartographCF-ExtraLight.otf") format("opentype");
+}
+
+@font-face {
+    font-family: "CartographCF-ExtraLightItalic";
+    src: url("./fonts/CartographCF-ExtraLightItalic.otf") format("opentype");
+}
+
+@font-face {
+    font-family: "CartographCF-Heavy";
+    src: url("./fonts/CartographCF-Heavy.otf") format("opentype");
+}
+
+@font-face {
+    font-family: "CartographCF-HeavyItalic";
+    src: url("./fonts/CartographCF-HeavyItalic.otf") format("opentype");
+}
+
+@font-face {
+    font-family: "CartographCF-Light";
+    src: url("./fonts/CartographCF-Light.otf") format("opentype");
+}
+
+@font-face {
+    font-family: "CartographCF-LightItalic";
+    src: url("./fonts/CartographCF-LightItalic.otf") format("opentype");
+}
+
+@font-face {
+    font-family: "CartographCF-Regular";
+    src: url("./fonts/CartographCF-Regular.otf") format("opentype");
+}
+
+@font-face {
+    font-family: "CartographCF-RegularItalic";
+    src: url("./fonts/CartographCF-RegularItalic.otf") format("opentype");
+}
+
+@font-face {
+    font-family: "CartographCF-Thin";
+    src: url("./fonts/CartographCF-Thin.otf") format("opentype");
+}
+
+@font-face {
+    font-family: "CartographCF-ThinItalic";
+    src: url("./fonts/CartographCF-ThinItalic.otf") format("opentype");
+}
