@@ -1,6 +1,6 @@
 from itertools import combinations, permutations, product
 from typing import List, Any
-from composition import Composition
+from peplab.design.library_design.composition import Composition
 from abc import ABC, abstractmethod
 
 class CombinatorialComposition(Composition):
