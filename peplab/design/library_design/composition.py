@@ -17,7 +17,7 @@ class Composition(ABC):
         unique_elements = self._deduplicate(filtered_elements, *args, **kwargs)
         return self._order_elements(unique_elements, *args, **kwargs)
 
-'''    @abstractmethod
+    @abstractmethod
     def _generate_elements(self, *args, **kwargs) -> List[Any]:
         """Abstract method to be implemented by subclasses to generate elements."""
         pass
@@ -32,4 +32,4 @@ class Composition(ABC):
 
     def _order_elements(self, elements: List[Any], *args, **kwargs) -> List[Any]:
         """Optional: Order elements."""
-        return elements  # Default: no ordering'''
+        return elements  # Default: no ordering
