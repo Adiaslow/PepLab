@@ -19,8 +19,8 @@ def main():
 
     # Display the library
     print("Generated Peptide Library:")
-    for peptide in peptide_library[:5]:  # Limit output for readability
-        print(peptide)
+    for peptide in peptide_library[:10]:  # Limit output for readability
+        print("_".join(peptide))
 
     # Print total combinations
     print(f"Total Combinations: {len(peptide_library)}")
