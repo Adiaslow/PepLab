@@ -1,5 +1,5 @@
 import csv
-from composition import Composition
+from peplab.design.library_design.composition import Composition
 
 
 class Composer:

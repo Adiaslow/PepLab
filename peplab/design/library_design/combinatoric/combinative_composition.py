@@ -48,6 +48,7 @@ class CartesianProductComposition(CombinatorialComposition):
         Implements the abstract method to generate Cartesian products.
         """
         return [list(prod) for prod in product(*item_lists)]
+    
 
 
 class KFoldCartesianProductComposition(CombinatorialComposition):
