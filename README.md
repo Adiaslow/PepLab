@@ -1,86 +1,72 @@
-# PepLab
 
-## Current Workflows
-```mermaid
-sequenceDiagram
-    participant Input
-    participant Parser
-    participant Peptide
-    participant Structure3D
-    participant Graph
-    participant Residue
-    participant Site
-    participant Profile
-    participant Path
-    participant Bond
-    participant React
-    participant Product
-    participant Property
-    participant Library
+# PepLab: Peptide Library Generator
 
-    Note over Input,Library: 1. Input Processing
-    Input->>Parser: Library definition JSON
-    
-    alt Direct SMILES Path
-        Parser->>Graph: Convert SMILES to graphs
-        Graph->>Peptide: Create peptides directly
-        
-        opt 3D Structure Generation
-            alt Conformer Generation
-                Peptide->>Structure3D: Request conformer generation
-            else MD Simulation
-                Peptide->>Structure3D: Perform MD simulation
-            else Experimental Structure
-                Peptide->>Structure3D: Load experimental coordinates
-            end
-            Structure3D->>Peptide: Return 3D coordinates
-        end
+**PepLab** is a modular and extensible tool for generating peptide libraries using various combinatorial and group-theoretic composition strategies. This tool enables researchers to efficiently create libraries of peptide sequences, export results to CSV files, and integrate them into downstream workflows.
 
-    else Residue-Based Path
-        Parser->>Peptide: parse_residue_library()
-        loop For each residue
-            Parser->>Graph: Convert SMILES to graph
-            
-            opt 3D Structure Generation
-                alt Conformer Generation
-                    Graph->>Structure3D: Request conformer generation
-                else MD Simulation
-                    Graph->>Structure3D: Perform MD simulation
-                else Experimental Structure
-                    Graph->>Structure3D: Load experimental coordinates
-                end
-                Structure3D->>Graph: Return 3D coordinates
-            end
-            
-            Graph->>Residue: Create residue
-            Residue->>Site: Identify reactive sites
-        end
-        
-        Note over Input,Library: 2. Reactivity Analysis
-        loop For each reactive site
-            Site->>Profile: Calculate reactivity scores
-            Profile->>Profile: Apply temperature effects
-            Profile->>Path: Generate possible pathways
-            Path->>Path: Score pathway viability
-        end
-        Path->>React: Provide ranked pathways
-        
-        Note over Input,Library: 3. Reaction Planning
-        React->>React: Check site compatibility
-        React->>React: Evaluate reaction conditions
-        React->>React: Select preferred pathway
-        
-        Note over Input,Library: 4. Reaction Execution
-        React->>Site: Initialize selected reaction
-        Site->>Site: Check spatial arrangement
-        Site->>Bond: Begin bond formation
-        Bond->>Bond: Update electron positions
-        Bond->>Product: Generate new molecule
-        Product->>Peptide: Create peptide
-    end
-    
-    Note over Input,Library: 5. Library Assembly and Analysis
-    Peptide->>Library: Add to library
-    Library->>Property: Calculate properties
-    Property->>Library: Store results
+---
+
+## **Features**
+
+- **Modular Composition Framework**:
+  - Combinatorial strategies: Combinations, permutations, Cartesian products, and k-fold Cartesian products.
+  - Group-theoretic strategies: Cyclic and dihedral permutations.
+
+- **Flexible Export Options**:
+  - Export generated libraries to CSV files for easy sharing and downstream analysis.
+
+- **Extendable Design**:
+  - Built using the Template and Strategy patterns to facilitate the addition of new composition methods.
+
+- **Testing and Validation**:
+  - Comprehensive unit tests for each component ensure reliability and accuracy.
+
+---
+
+## **Workflow**
+
+### **1. Define Input Data**
+Start with a list of elements (e.g., amino acids or fragments) to combine into sequences.
+```python
+amino_acids = ['A', 'R', 'N', 'D']
 ```
+
+---
+
+### **2. Choose a Composition Strategy**
+Select a strategy for combining the input:
+```python
+# Combinative Strategies
+# - Combinations: Select subsets of a specific size (order doesn’t matter).
+# - Permutations: Generate all possible orderings (order matters).
+# - Cartesian Products: Combine elements from multiple sets.
+# - K-fold Cartesian Products: Repeated combinations of a single set.
+
+# Group-Theoretic Strategies
+# - Cyclic Permutations: Rotate elements within a list.
+# - Dihedral Permutations: Include both rotations and reflections.
+```
+
+---
+
+### **3. Use the Composer**
+Pass the input data and selected strategy to the `Composer` class to generate the library:
+```python
+from combinative_composition import CombinationComposition
+from composer import Composer
+
+# Initialize the composition strategy and composer
+combination_strategy = CombinationComposition()
+composer = Composer(combination_strategy)
+
+# Generate the peptide library
+peptide_library = composer.generate_library(amino_acids, r=3)
+```
+
+---
+
+### **4. Export the Results**
+Save the generated library to a CSV file using the export functionality:
+```python
+composer.export_to_csv(peptide_library, "peptide_library.csv")
+```
+
