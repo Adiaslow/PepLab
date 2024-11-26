@@ -1,38 +1,18 @@
 from abc import ABC, abstractmethod
+from composition import Composition
 
-class GroupTheoreticComposition(ABC):
-    """
-    Abstract base class for group-theoretic compositions.
-    """
-
-    def cyclic_permutations(self, items):
-        """
-        Generates all cyclic permutations of a list of items.
-        """
-        n = len(items)
-        return [items[i:] + items[:i] for i in range(n)]
-
+class GroupTheoreticComposition(Composition):
+    
     @abstractmethod
-    def generate_composition(self, items):
-        """
-        Abstract method to generate compositions.
-        Must be implemented by subclasses.
-        """
+    def generate_composition(self):
+        raise NotImplementedError("This method must be implemented in a subclass")
+        
+class CyclicPermutationComposition(GroupTheoreticComposition):
+    def generate_composition(self):
         pass
-
-
-class CyclicComposition(GroupTheoreticComposition):
-    """
-    Generates cyclic permutations of a list of items.
-    """
-
-    def generate_composition(self, items):
-        return self.cyclic_permutations(items)
-
-class CyclicComposition(GroupTheoreticComposition):
-    """
-    Generates cyclic permutations of a list of items.
-    """
-
-    def generate_composition(self, items):
-        return self.cyclic_permutations(items)
+        # Logic for cyclic perms
+        
+class DihedralPermutationComposition(GroupTheoreticComposition):
+    def generate_composition(self):
+        pass
+        # Logic for dihedral perms
