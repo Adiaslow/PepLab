@@ -1,7 +1,7 @@
 from typing import Dict, Optional, Tuple
 from rdkit import Chem
 
-from ...peplab.utils.rdkit_utils import RDKitUtils
+from peplab.utils.rdkit_utils import RDKitUtils
 
 class SMILESGenerator:
     """Generates SMILES strings from molecular graphs."""

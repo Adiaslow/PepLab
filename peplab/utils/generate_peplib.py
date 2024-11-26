@@ -1,5 +1,5 @@
-from ...peplab.design.library_design.combinatoric.combinative_composition import CombinationComposition
-from ...peplab.design.library_design.composer import Composer
+from peplab.design.library_design.combinatoric.combinative_composition import CombinationComposition
+from peplab.design.library_design.composer import Composer
 
 # Define input items (e.g., amino acids)
 amino_acids = ['A', 'R', 'N', 'D']
