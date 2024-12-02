@@ -1,3 +1,10 @@
+import sys
+import os
+
+# Add the project root to the Python path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
+
 from peplab.design.library_design.combinatoric.combinative_composition import CartesianProductComposition
 from peplab.design.library_design.composer import Composer
 
@@ -17,6 +24,10 @@ def main():
     print("Generated Peptide Library:")
     for peptide in peptide_library[:5]:
         print(peptide)
+    for peptide in peptide_library[:10]:  # Limit output for readability
+        print("_".join(peptide))
+
+    # Print total combinations
     print(f"Total Combinations: {len(peptide_library)}")
     composer.export_to_csv(peptide_library, "peptide_library.csv")
 
