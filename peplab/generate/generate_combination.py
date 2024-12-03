@@ -5,25 +5,20 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 
-from peplab.design.library_design.combinatoric.combinative_composition import CartesianProductComposition
+from peplab.design.library_design.combinatoric.combinative_composition import CombinationComposition
 from peplab.design.library_design.composer import Composer
 
 def main():
-    amino_acids = [
-        ['Leu', 'Phe', 'Val', 'Ala'],
-        ['DLeu', 'DPhe', 'DVal', 'DAla'],
-        ['LeuMe', 'PheMe', 'ValMe', 'AlaMe'],
-        ['DLeuMe', 'DPheMe', 'DValMe', 'DAlaMe']
-    ]
+    amino_acids = ['Leu', 'Phe', 'Val', 'Ala']
 
-    cartesian_strategy = CartesianProductComposition()
-    composer = Composer(cartesian_strategy)
+    composition_strategy = CombinationComposition()
+    composer = Composer(composition_strategy)
 
-    peptide_library = composer.generate_library(*amino_acids)
+    peptide_library = composer.generate_library(amino_acids, r = 3)
+
+    # Set r to desired length of combination
 
     print("Generated Peptide Library:")
-    for peptide in peptide_library[:5]:
-        print(peptide)
     for peptide in peptide_library[:10]:  # Limit output for readability
         print("_".join(peptide))
 
