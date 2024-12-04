@@ -1,8 +1,10 @@
 import sys
 import os
 
+
 # Add the project root to the Python path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../PepLab"))
+sys.path.append(project_root)
 
 from peplab.design.library_design.group_theoretic.grouptheoreticcomp import CyclicPermutationComposition
 from peplab.design.library_design.composer import Composer
