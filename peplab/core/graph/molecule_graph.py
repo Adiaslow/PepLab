@@ -91,44 +91,68 @@ class MolecularGraph:
         """Find azide (N3) group and mark first nitrogen as reactive."""
         for node in self.nodes:
             if node.element == 'N':
-                # Check for N-N≡N pattern
                 neighbors = self.get_neighbors(node.id)
-                n2 = None
-                for neighbor, edge in neighbors:
-                    if neighbor.element == 'N':
-                        n2 = neighbor
-                        break
 
-                if n2:
-                    n2_neighbors = self.get_neighbors(n2.id)
-                    n3 = None
-                    for neighbor, edge in n2_neighbors:
-                        if neighbor.element == 'N' and neighbor.id != node.id:
-                            n3 = neighbor
-                            break
+                # First N should have exactly two connections
+                if len(neighbors) != 2:
+                    continue
 
-                    if n3:
-                        # Verify N3 pattern: N-N≡N
-                        n3_neighbors = self.get_neighbors(n3.id)
-                        if (len(neighbors) == 2 and  # First N has 2 connections
-                            len(n2_neighbors) == 2 and  # Middle N has 2 connections
-                            len(n3_neighbors) == 1):  # Terminal N has 1 connection
-                            node.is_reactive_nuc = True
+                # Find N2 connected by single bond
+                n2_pair = next(((n, e) for n, e in neighbors
+                              if n.element == 'N' and e.bond_type == 'SINGLE'), None)
+                if not n2_pair:
+                    continue
+
+                n2, n1_n2_bond = n2_pair
+                n2_neighbors = self.get_neighbors(n2.id)
+
+                # N2 should have exactly two connections
+                if len(n2_neighbors) != 2:
+                    continue
+
+                # Find N3 connected to N2 by triple bond
+                n3_pair = next(((n, e) for n, e in n2_neighbors
+                              if n.element == 'N' and n.id != node.id
+                              and e.bond_type == 'TRIPLE'), None)
+                if not n3_pair:
+                    continue
+
+                n3, n2_n3_bond = n3_pair
+
+                # Check N3 has exactly one connection
+                n3_neighbors = self.get_neighbors(n3.id)
+                if len(n3_neighbors) == 1:
+                    # All conditions met, mark as reactive
+                    node.is_reactive_nuc = True
 
     def _find_alkyne_pattern(self) -> None:
         """Find terminal alkyne (C≡C) group and mark as reactive."""
         for node in self.nodes:
             if node.element == 'C':
                 neighbors = self.get_neighbors(node.id)
-                for neighbor, edge in neighbors:
-                    if (neighbor.element == 'C' and
-                        edge.bond_type == 'TRIPLE'):
-                        # Check if either carbon is terminal (has only one other connection)
-                        neighbor_connections = self.get_neighbors(neighbor.id)
-                        if (len(neighbors) <= 2 or  # Current carbon has at most 2 connections (triple bond + 1)
-                            len(neighbor_connections) <= 2):  # Partner carbon has at most 2 connections
-                            node.is_reactive_elec = True
-                            break
+
+                # Find triple-bonded carbon
+                triple_bond_pair = next(((n, e) for n, e in neighbors
+                                       if n.element == 'C' and e.bond_type == 'TRIPLE'), None)
+                if not triple_bond_pair:
+                    continue
+
+                other_c, triple_bond = triple_bond_pair
+
+                # Get non-triple bond connections for both carbons
+                current_other_bonds = [(n, e) for n, e in neighbors if e != triple_bond]
+                other_c_neighbors = self.get_neighbors(other_c.id)
+                other_c_other_bonds = [(n, e) for n, e in other_c_neighbors if e != triple_bond]
+
+                # Check if either carbon is terminal
+                is_current_terminal = len(current_other_bonds) <= 1
+                is_other_terminal = len(other_c_other_bonds) <= 1
+
+                # Ensure at least one is terminal and the other isn't over-connected
+                if ((is_current_terminal and len(other_c_other_bonds) <= 2) or
+                    (is_other_terminal and len(current_other_bonds) <= 2)):
+                    # If current carbon is terminal or connected to terminal, mark as reactive
+                    node.is_reactive_elec = True
 
     def _find_nh2_pattern(self) -> None:
         for node in self.nodes:
