@@ -268,10 +268,41 @@ class PeptideBuilder:
         return mod_graph
 
     def _has_click_pairs(self, combo: tuple) -> bool:
-        """Check if the combination has matching azide and alkyne pairs."""
-        has_azide = any(res.get('nuc') == 'N3' or res.get('elec') == 'N3' for res in combo)
-        has_alkyne = any(res.get('nuc') == 'C#C' or res.get('elec') == 'C#C' for res in combo)
-        return has_azide and has_alkyne
+        """Check if the combination has valid azide and alkyne pairs for click chemistry."""
+        # Find residues with potential azide/alkyne groups
+        azide_residues = [res for res in combo
+                          if res.get('nuc') == 'N3' or res.get('elec') == 'N3']
+        alkyne_residues = [res for res in combo
+                           if res.get('nuc') == 'C#C' or res.get('elec') == 'C#C']
+
+        if not (azide_residues and alkyne_residues):
+            return False
+
+        # For each potential pair, validate the reactive sites
+        for azide_res in azide_residues:
+            graph = azide_res['graph']
+            # Find the azide nitrogen (could be nucleophile or electrophile)
+            azide_n = next((n for n in graph.nodes
+                           if n.is_reactive_nuc or n.is_reactive_elec), None)
+            if not azide_n or not self._is_azide_nitrogen(azide_n, graph):
+                continue
+
+            for alkyne_res in alkyne_residues:
+                if azide_res == alkyne_res:  # Skip same residue
+                    continue
+
+                graph = alkyne_res['graph']
+                # Find the alkyne carbon (could be nucleophile or electrophile)
+                alkyne_c = next((n for n in graph.nodes
+                               if n.is_reactive_nuc or n.is_reactive_elec), None)
+                if not alkyne_c or not self._is_alkyne_carbon(alkyne_c, graph):
+                    continue
+
+                # If we find a valid pair, return True
+                if self.validate_click_chemistry_pair(azide_n, alkyne_c, graph):
+                    return True
+
+        return False
 
     def click_cyclize_peptide(self, linear_peptide: MolecularGraph) -> MolecularGraph:
         """
@@ -476,53 +507,131 @@ class PeptideBuilder:
         return chain
 
     def _is_azide_nitrogen(self, node: GraphNode, graph: MolecularGraph) -> bool:
-        """Check if node is the first nitrogen of an azide group."""
+        """
+        Check if node is the first nitrogen of an azide group.
+        Verifies N-N≡N pattern with correct bond types and connectivity.
+        """
         if node.element != 'N':
             return False
 
-        # Check for N-N≡N pattern
-        connected = self._get_connected_atoms(node.id, graph)
-        if len(connected) != 2:  # Should have one bond to carbon chain and one to next nitrogen
+        # Get connected atoms and their bonds
+        connected = []
+        for edge in graph.edges:
+            if edge.from_idx == node.id:
+                atom = next(n for n in graph.nodes if n.id == edge.to_idx)
+                connected.append((atom, edge))
+            elif edge.to_idx == node.id:
+                atom = next(n for n in graph.nodes if n.id == edge.from_idx)
+                connected.append((atom, edge))
+
+        # First N should have exactly two connections
+        if len(connected) != 2:
             return False
 
-        n2 = next((n for n in connected if n.element == 'N'), None)
-        if not n2:
+        # Find the second nitrogen (N2)
+        n2_pair = next(((atom, edge) for atom, edge in connected
+                        if atom.element == 'N' and edge.bond_type == 'SINGLE'), None)
+        if not n2_pair:
             return False
 
-        n2_connected = self._get_connected_atoms(n2.id, graph)
-        n3 = next((n for n in n2_connected if n.element == 'N' and n.id != node.id), None)
+        n2, n1_n2_bond = n2_pair
 
-        return n3 is not None
+        # Check N2 connections
+        n2_connected = []
+        for edge in graph.edges:
+            if edge.from_idx == n2.id:
+                atom = next(n for n in graph.nodes if n.id == edge.to_idx)
+                n2_connected.append((atom, edge))
+            elif edge.to_idx == n2.id:
+                atom = next(n for n in graph.nodes if n.id == edge.from_idx)
+                n2_connected.append((atom, edge))
+
+        # N2 should have exactly two connections (N1 and N3)
+        if len(n2_connected) != 2:
+            return False
+
+        # Find N3 (should be connected to N2 with a triple bond)
+        n3_pair = next(((atom, edge) for atom, edge in n2_connected
+                        if atom.element == 'N' and atom.id != node.id
+                        and edge.bond_type == 'TRIPLE'), None)
+        if not n3_pair:
+            return False
+
+        n3, n2_n3_bond = n3_pair
+
+        # Check N3 has only one connection (to N2)
+        n3_connections = sum(1 for edge in graph.edges
+                            if edge.from_idx == n3.id or edge.to_idx == n3.id)
+        if n3_connections != 1:
+            return False
+
+        return True
 
     def _is_alkyne_carbon(self, node: GraphNode, graph: MolecularGraph) -> bool:
-        """Check if node is part of an alkyne group."""
+        """
+        Check if node is part of a terminal alkyne group.
+        Verifies C≡C pattern with correct bond types and connectivity.
+        """
         if node.element != 'C':
             return False
 
-        # Find triple bond
-        triple_bond = next(
-            (e for e in graph.edges
-                if (e.from_idx == node.id or e.to_idx == node.id)
-                and e.bond_type == 'TRIPLE'),
-            None
-        )
+        # Get all connections and their bond types
+        connected = []
+        for edge in graph.edges:
+            if edge.from_idx == node.id:
+                atom = next(n for n in graph.nodes if n.id == edge.to_idx)
+                connected.append((atom, edge))
+            elif edge.to_idx == node.id:
+                atom = next(n for n in graph.nodes if n.id == edge.from_idx)
+                connected.append((atom, edge))
 
-        if not triple_bond:
+        # Find triple bond and connected carbon
+        triple_bond_pair = next(((atom, edge) for atom, edge in connected
+                                if atom.element == 'C' and edge.bond_type == 'TRIPLE'), None)
+        if not triple_bond_pair:
             return False
 
-        # Find the other carbon of the triple bond
-        other_carbon_id = triple_bond.to_idx if triple_bond.from_idx == node.id else triple_bond.from_idx
-        other_carbon = next((n for n in graph.nodes if n.id == other_carbon_id), None)
+        other_c, triple_bond = triple_bond_pair
 
-        if not other_carbon or other_carbon.element != 'C':
+        # Check connections of both carbons
+        node_other_connections = [(atom, edge) for atom, edge in connected if edge != triple_bond]
+        other_c_connections = []
+        for edge in graph.edges:
+            if edge != triple_bond:
+                if edge.from_idx == other_c.id:
+                    atom = next(n for n in graph.nodes if n.id == edge.to_idx)
+                    other_c_connections.append((atom, edge))
+                elif edge.to_idx == other_c.id:
+                    atom = next(n for n in graph.nodes if n.id == edge.from_idx)
+                    other_c_connections.append((atom, edge))
+
+        # At least one carbon must be terminal (only one other connection)
+        # and the other should have at most two other connections
+        is_node_terminal = len(node_other_connections) <= 1
+        is_other_terminal = len(other_c_connections) <= 1
+
+        if not (is_node_terminal or is_other_terminal):
             return False
 
-        # Count connections to both carbons
-        node_connections = len(self._get_connected_atoms(node.id, graph))
-        other_connections = len(self._get_connected_atoms(other_carbon_id, graph))
+        # The non-terminal carbon should have at most 2 other connections
+        if is_node_terminal and len(other_c_connections) > 2:
+            return False
+        if is_other_terminal and len(node_other_connections) > 2:
+            return False
 
-        # At least one of the carbons should have only one connection besides the triple bond
-        return node_connections <= 2 or other_connections <= 2
+        return True
+
+    def validate_click_chemistry_pair(self, azide_n: GraphNode, alkyne_c: GraphNode,
+                                    graph: MolecularGraph) -> bool:
+        """
+        Validate that the given azide nitrogen and alkyne carbon can participate
+        in click chemistry reaction.
+        """
+        if not (self._is_azide_nitrogen(azide_n, graph) and
+                self._is_alkyne_carbon(alkyne_c, graph)):
+            return False
+
+        return True
 
     def _get_connected_atoms(self, node_id: int, graph: MolecularGraph) -> List[GraphNode]:
         """Get all atoms connected to the given node."""
