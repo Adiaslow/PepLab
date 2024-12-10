@@ -64,26 +64,21 @@ export const routes = {
                     <button id="mcmc">Markov Chain Monte Carlo</button>
                 </div>
             `,
-        init: function () {
-            // Add event listeners for all buttons
-            document
-                .getElementById("combinatoric")
-                .addEventListener("click", () => {
-                    window.location.hash = "/combinatoric";
+            init: function () {
+                // Add event listeners to buttons
+                document.getElementById("cartesianButton").addEventListener("click", async () => {
+                    const result = await callAPI("cartesian", [1, 2, 3], 2);
+                    console.log(result); // Handle this result in the frontend (e.g., render on page)
                 });
-
-            document.getElementById("mcmc").addEventListener("click", () => {
-                window.location.hash = "/mcmc";
-            });
-
-            document.getElementById("genetic").addEventListener("click", () => {
-                window.location.hash = "/genetic";
-            });
-
-            document
-                .getElementById("generative")
-                .addEventListener("click", () => {
-                    window.location.hash = "/generative";
+        
+                document.getElementById("combinativeButton").addEventListener("click", async () => {
+                    const result = await callAPI("combinative", [1, 2, 3], 2);
+                    console.log(result);
+                });
+        
+                document.getElementById("permutativeButton").addEventListener("click", async () => {
+                    const result = await callAPI("permutative", [1, 2, 3]);
+                    console.log(result);
                 });
         },
         /*

@@ -66,6 +66,13 @@
             loadingIndicator.style.display = isLoading ? "block" : "none";
         }
     }
+    function displayResults(results) {
+        const outputDiv = document.getElementById("output");
+        if (outputDiv) {
+            outputDiv.innerHTML = results.map(result => `<div>${JSON.stringify(result)}</div>`).join("");
+        }
+    }
+    
 
     // Add event listeners to buttons
     document.getElementById("combinativeButton").addEventListener("click", () => {

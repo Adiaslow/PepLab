@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 import sys
 import os
+from flask_cors import CORS  # Import Flask-CORS
 
 # Add project root to sys.path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -14,6 +15,7 @@ from peplab.design.library_design.group_theoretic.grouptheoreticcomp import (
 )
 
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": ["http://127.0.0.1:8000", "http://localhost:8000"]}})
 
 # Helper function to validate input
 def validate_input(data):
@@ -27,11 +29,12 @@ def validate_input(data):
 @app.route('/generate', methods=['POST'])
 def generate_composition():
     data = request.json
+    app.logger.info(f"Received request with data: {request.json}")
 
     # Validate input
     is_valid, error_message = validate_input(data)
     if not is_valid:
-        return jsonify({"error": error_message}), 400
+        return jsonify({"testerror": error_message}), 400
 
     strategy = data.get('strategy')  # e.g., "combinative", "cyclic", etc.
     input_data = data.get('input_data')  # List of numbers or items
@@ -69,7 +72,7 @@ def generate_composition():
     except Exception as e:
         # Log and return the error
         app.logger.error(f"Error generating composition: {str(e)}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"testerror": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(debug=True)
