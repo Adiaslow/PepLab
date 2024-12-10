@@ -178,7 +178,7 @@ class PeptideBuilder:
         )
 
         if not (nuc_site and elec_site):
-            raise ValueError("Could not find required reactive sites")
+            raise ValueError("Could not find required reactive sites for peptide bond formation")
 
         res1_mod = copy.deepcopy(res1)
         res2_mod = copy.deepcopy(res2)
@@ -317,7 +317,7 @@ class PeptideBuilder:
         alkyne_site = next((n for n in cyclic.nodes if n.is_reactive_elec), None)
 
         if not azide_site or not alkyne_site:
-            raise ValueError("Cannot find required reactive sites")
+            raise ValueError("Cannot find required reactive sites for click reaction")
 
         # Find the complete azide chain
         azide_chain = []
