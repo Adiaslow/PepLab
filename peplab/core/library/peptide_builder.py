@@ -224,6 +224,7 @@ class PeptideBuilder:
                 )
 
                 if protecting_group_atoms:
+                    print(f"Found protecting group {protecting_group} at atom {attachment.id}")
                     # Remove protecting group and restore NH
                     nodes_to_remove = []
                     edges_to_remove = []
