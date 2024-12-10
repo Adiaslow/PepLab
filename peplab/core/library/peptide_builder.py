@@ -167,7 +167,7 @@ class PeptideBuilder:
         return peptide
 
     def _form_peptide_bond(self, res1: MolecularGraph, res2: MolecularGraph) -> MolecularGraph:
-        """Form peptide bond between residues."""
+        """Form peptide bond between residues, handling both primary and secondary amines."""
         nuc_site = next(
             (n for n in res1.nodes if n.is_reactive_nuc and not n.is_reactive_click),
             None
@@ -178,15 +178,20 @@ class PeptideBuilder:
         )
 
         if not (nuc_site and elec_site):
-            self.logger.warning(f"Failed to find reactive sites - NH2: {nuc_site is not None}, COOH: {elec_site is not None}")
+            self.logger.warning(
+                f"Failed to find reactive sites - Amine: {nuc_site is not None}, "
+                f"COOH: {elec_site is not None}"
+            )
             raise ValueError("Could not find required reactive sites for peptide bond formation")
 
         res1_mod = copy.deepcopy(res1)
         res2_mod = copy.deepcopy(res2)
 
+        # Remove appropriate number of hydrogens based on amine type
         res1_mod = self._remove_h_from_nh(res1_mod, nuc_site.id)
         res2_mod = self._remove_oh_from_cooh(res2_mod, elec_site.id)
 
+        # Combine graphs with updated atom indexing
         max_id = max(n.id for n in res1_mod.nodes) + 1
         for node in res2_mod.nodes:
             node.id += max_id
@@ -198,6 +203,7 @@ class PeptideBuilder:
         combined.nodes = res1_mod.nodes + res2_mod.nodes
         combined.edges = res1_mod.edges + res2_mod.edges
 
+        # Form the new peptide bond
         combined.edges.append(GraphEdge(
             from_idx=nuc_site.id,
             to_idx=elec_site.id + max_id,
@@ -208,6 +214,7 @@ class PeptideBuilder:
             stereo='NONE'
         ))
 
+        # Update reactive sites
         for node in combined.nodes:
             if node.id == nuc_site.id:
                 node.is_reactive_nuc = False
@@ -216,23 +223,73 @@ class PeptideBuilder:
 
         return self._reindex_graph(combined)
 
-    def _remove_h_from_nh(self, graph: MolecularGraph, node_id: int) -> MolecularGraph:
-        """Remove hydrogen from NH/NH2 group."""
-        mod_graph = copy.deepcopy(graph)
+    def _get_amine_type(self, node: GraphNode, graph: MolecularGraph) -> str:
+        """
+        Determine if a nitrogen is a primary or secondary amine.
+        Returns 'NH2' for primary or 'NH' for secondary amine.
+        """
+        if not node.is_reactive_nuc:
+            return ''
 
-        for edge in mod_graph.edges[:]:  # Use slice to allow modification during iteration
+        h_count = 0
+        heavy_count = 0
+
+        # Count connected atoms
+        for neighbor, edge in graph.get_neighbors(node.id):
+            if neighbor.element == 'H':
+                h_count += 1
+            else:
+                heavy_count += 1
+
+        if h_count == 2 and heavy_count == 1:
+            return 'NH2'
+        elif h_count == 1 and heavy_count == 2:
+            return 'NH'
+        return ''
+
+    def _remove_h_from_nh(self, graph: MolecularGraph, node_id: int) -> MolecularGraph:
+        """
+        Remove appropriate number of hydrogens based on amine type.
+        For NH2: removes one H
+        For NH: removes the single H
+        """
+        mod_graph = copy.deepcopy(graph)
+        amine_type = self._get_amine_type(
+            next(n for n in mod_graph.nodes if n.id == node_id),
+            mod_graph
+        )
+
+        h_to_remove = 1  # Remove one H for either type
+        h_removed = 0
+
+        edges_to_remove = []
+        nodes_to_remove = []
+
+        for edge in mod_graph.edges:
+            if h_removed >= h_to_remove:
+                break
+
             if edge.from_idx == node_id:
-                h_node = next((n for n in mod_graph.nodes if n.id == edge.to_idx and n.element == 'H'), None)
+                h_node = next((n for n in mod_graph.nodes
+                              if n.id == edge.to_idx and n.element == 'H'), None)
                 if h_node:
-                    mod_graph.nodes.remove(h_node)
-                    mod_graph.edges.remove(edge)
-                    break
+                    edges_to_remove.append(edge)
+                    nodes_to_remove.append(h_node)
+                    h_removed += 1
             elif edge.to_idx == node_id:
-                h_node = next((n for n in mod_graph.nodes if n.id == edge.from_idx and n.element == 'H'), None)
+                h_node = next((n for n in mod_graph.nodes
+                              if n.id == edge.from_idx and n.element == 'H'), None)
                 if h_node:
-                    mod_graph.nodes.remove(h_node)
-                    mod_graph.edges.remove(edge)
-                    break
+                    edges_to_remove.append(edge)
+                    nodes_to_remove.append(h_node)
+                    h_removed += 1
+
+        for edge in edges_to_remove:
+            if edge in mod_graph.edges:
+                mod_graph.edges.remove(edge)
+        for node in nodes_to_remove:
+            if node in mod_graph.nodes:
+                mod_graph.nodes.remove(node)
 
         return mod_graph
 
@@ -302,17 +359,19 @@ class PeptideBuilder:
         return False
 
     def click_cyclize_peptide(self, linear_peptide: MolecularGraph) -> MolecularGraph:
-        """Form triazole ring through click chemistry cyclization."""
+        """
+        Form triazole ring through copper-catalyzed azide-alkyne cycloaddition (CuAAC).
+        Creates a 1,4-disubstituted 1,2,3-triazole ring with correct alternating single/double bonds.
+        Pattern: N1-N2=N3-C4=C5-N1
+        """
         cyclic = copy.deepcopy(linear_peptide)
 
-        # Find azide and alkyne sites (using click reactive sites)
-        azide_site = next((n for n in cyclic.nodes if n.is_reactive_click
-                            and n.element == 'N'), None)
-        alkyne_site = next((n for n in cyclic.nodes if n.is_reactive_click
-                            and n.element == 'C'), None)
+        # Find azide and alkyne sites
+        azide_site = next((n for n in cyclic.nodes if n.is_reactive_nuc), None)
+        alkyne_site = next((n for n in cyclic.nodes if n.is_reactive_elec), None)
 
         if not azide_site or not alkyne_site:
-            raise ValueError("Cannot find required click chemistry reactive sites")
+            raise ValueError("Cannot find required reactive sites")
 
         # Find the complete azide chain
         azide_chain = []
