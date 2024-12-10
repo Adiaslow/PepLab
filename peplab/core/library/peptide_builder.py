@@ -276,7 +276,8 @@ class PeptideBuilder:
     def click_cyclize_peptide(self, linear_peptide: MolecularGraph) -> MolecularGraph:
         """
         Form triazole ring through copper-catalyzed azide-alkyne cycloaddition (CuAAC).
-        Creates a 1,4-disubstituted 1,2,3-triazole ring with simple double bonds.
+        Creates a 1,4-disubstituted 1,2,3-triazole ring with correct alternating single/double bonds.
+        Pattern: N1-N2=N3-C4=C5-N1
         """
         cyclic = copy.deepcopy(linear_peptide)
 
@@ -363,7 +364,7 @@ class PeptideBuilder:
                 if node_to_remove in cyclic.nodes:
                     cyclic.nodes.remove(node_to_remove)
 
-        # Create the triazole ring with just two double bonds
+        # Create the triazole ring with correct alternating single/double bonds
         # Pattern: N1-N2=N3-C4=C5-N1
         new_edges = [
             GraphEdge(  # N1-N2
@@ -371,7 +372,7 @@ class PeptideBuilder:
                 to_idx=azide_chain[1].id,
                 bond_type='SINGLE',
                 is_aromatic=False,
-                is_conjugated=False,
+                is_conjugated=True,
                 in_ring=True,
                 stereo='NONE'
             ),
@@ -380,7 +381,7 @@ class PeptideBuilder:
                 to_idx=azide_chain[2].id,
                 bond_type='DOUBLE',
                 is_aromatic=False,
-                is_conjugated=False,
+                is_conjugated=True,
                 in_ring=True,
                 stereo='NONE'
             ),
@@ -389,7 +390,7 @@ class PeptideBuilder:
                 to_idx=alkyne_chain[0].id,
                 bond_type='SINGLE',
                 is_aromatic=False,
-                is_conjugated=False,
+                is_conjugated=True,
                 in_ring=True,
                 stereo='NONE'
             ),
@@ -398,7 +399,7 @@ class PeptideBuilder:
                 to_idx=alkyne_chain[1].id,
                 bond_type='DOUBLE',
                 is_aromatic=False,
-                is_conjugated=False,
+                is_conjugated=True,
                 in_ring=True,
                 stereo='NONE'
             ),
@@ -407,7 +408,7 @@ class PeptideBuilder:
                 to_idx=azide_chain[0].id,
                 bond_type='SINGLE',
                 is_aromatic=False,
-                is_conjugated=False,
+                is_conjugated=True,
                 in_ring=True,
                 stereo='NONE'
             )
@@ -426,8 +427,8 @@ class PeptideBuilder:
                 node.implicit_h_count = 0
                 node.explicit_h_count = 0
                 node.formal_charge = 0
-                node.is_aromatic = False  # Explicitly set to non-aromatic
-                node.is_conjugated = False  # Explicitly set to non-conjugated
+                node.is_aromatic = False
+                node.is_conjugated = True  # Set conjugated to true for all ring atoms
                 if node.element == 'N':
                     node.valence = 3
                 elif node.element == 'C':
