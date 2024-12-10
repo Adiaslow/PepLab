@@ -74,21 +74,74 @@ class MolecularGraph:
         return neighbors
 
     def find_reactive_sites(self, nuc_pattern: str, elec_pattern: str) -> None:
-        """Find and mark reactive sites."""
-        if nuc_pattern == 'NH2':
-            self._find_nh2_pattern()
-        elif nuc_pattern == 'NH':
-            self._find_nh_pattern()
-        elif nuc_pattern == 'N3':
-            self._find_azide_pattern()
+        """Find and mark reactive sites for both peptide bonds and click chemistry."""
+        # Always look for peptide bond sites first
+        self._find_peptide_reactive_sites()
 
-        if elec_pattern == 'COOH':
-            self._find_cooh_pattern()
-        elif elec_pattern == 'C#C':
+        # Then look for click chemistry sites if specified
+        if nuc_pattern == 'N3' or elec_pattern == 'N3':
+            self._find_azide_pattern()
+        if nuc_pattern == 'C#C' or elec_pattern == 'C#C':
             self._find_alkyne_pattern()
 
+    def _find_peptide_reactive_sites(self) -> None:
+        """Find NH2/NH and COOH groups for peptide bond formation."""
+        # First clear any existing reactive site markings
+        for node in self.nodes:
+            node.is_reactive_nuc = False
+            node.is_reactive_elec = False
+
+        # Find NH2 groups
+        for node in self.nodes:
+            if node.element == 'N':
+                neighbors = self.get_neighbors(node.id)
+                non_h_neighbors = [(n, e) for n, e in neighbors if n.element != 'H']
+                h_neighbors = [(n, e) for n, e in neighbors if n.element == 'H']
+
+                # Check for NH2 pattern
+                if (len(non_h_neighbors) == 1 and  # One non-H neighbor
+                    len(h_neighbors) == 2 and      # Two H neighbors
+                    non_h_neighbors[0][0].element == 'C' and  # Connected to carbon
+                    non_h_neighbors[0][1].bond_type == 'SINGLE'):  # By single bond
+                    node.is_reactive_nuc = True
+                    continue
+
+                # Check for NH pattern (secondary amine)
+                if (len(non_h_neighbors) == 2 and  # Two non-H neighbors
+                    len(h_neighbors) == 1 and      # One H neighbor
+                    all(n.element == 'C' and e.bond_type == 'SINGLE'
+                        for n, e in non_h_neighbors)):  # Connected to carbons by single bonds
+                    node.is_reactive_nuc = True
+
+        # Find COOH groups
+        for node in self.nodes:
+            if node.element == 'C':
+                neighbors = self.get_neighbors(node.id)
+
+                # Count different types of connections
+                double_o = False
+                single_oh = False
+                carbon_single = False
+
+                for neighbor, edge in neighbors:
+                    if neighbor.element == 'O':
+                        if edge.bond_type == 'DOUBLE':
+                            double_o = True
+                        elif edge.bond_type == 'SINGLE':
+                            # Check if this O has a hydrogen
+                            o_neighbors = self.get_neighbors(neighbor.id)
+                            if any(n.element == 'H' for n, _ in o_neighbors):
+                                single_oh = True
+                    elif (neighbor.element == 'C' and
+                          edge.bond_type == 'SINGLE'):
+                        carbon_single = True
+
+                if double_o and single_oh and carbon_single:
+                    node.is_reactive_elec = True
+
     def _find_azide_pattern(self) -> None:
-        """Find azide (N3) group and mark first nitrogen as reactive."""
+        """Find azide (N3) group."""
+        # Implementation stays the same as before, but marks additional reactive site
         for node in self.nodes:
             if node.element == 'N':
                 neighbors = self.get_neighbors(node.id)
@@ -122,11 +175,12 @@ class MolecularGraph:
                 # Check N3 has exactly one connection
                 n3_neighbors = self.get_neighbors(n3.id)
                 if len(n3_neighbors) == 1:
-                    # All conditions met, mark as reactive
-                    node.is_reactive_nuc = True
+                    # Add azide as additional reactive site
+                    node.is_reactive_click = True  # Need to add this field to GraphNode
 
     def _find_alkyne_pattern(self) -> None:
-        """Find terminal alkyne (C≡C) group and mark as reactive."""
+        """Find terminal alkyne (C≡C) group."""
+        # Implementation stays the same as before, but marks additional reactive site
         for node in self.nodes:
             if node.element == 'C':
                 neighbors = self.get_neighbors(node.id)
@@ -148,11 +202,10 @@ class MolecularGraph:
                 is_current_terminal = len(current_other_bonds) <= 1
                 is_other_terminal = len(other_c_other_bonds) <= 1
 
-                # Ensure at least one is terminal and the other isn't over-connected
                 if ((is_current_terminal and len(other_c_other_bonds) <= 2) or
                     (is_other_terminal and len(current_other_bonds) <= 2)):
-                    # If current carbon is terminal or connected to terminal, mark as reactive
-                    node.is_reactive_elec = True
+                    # Add alkyne as additional reactive site
+                    node.is_reactive_click = True  # Need to add this field to GraphNode
 
     def _find_nh2_pattern(self) -> None:
         for node in self.nodes:
