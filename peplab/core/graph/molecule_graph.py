@@ -27,13 +27,14 @@ class MolecularGraph:
             mol = Chem.AddHs(mol)
 
             # Log molecule composition
+            """
             graph.logger.warning(f"Molecule composition:")
             for atom in mol.GetAtoms():
                 graph.logger.warning(f"Atom {atom.GetIdx()}: {atom.GetSymbol()}")
                 graph.logger.warning(f"  Charge: {atom.GetFormalCharge()}")
                 graph.logger.warning(f"  Implicit Hs: {atom.GetNumImplicitHs()}")
                 graph.logger.warning(f"  Explicit Hs: {atom.GetNumExplicitHs()}")
-
+            """
             # Add atoms
             for atom in mol.GetAtoms():
                 node = GraphNode(
