@@ -15,15 +15,24 @@ class MolecularGraph:
 
     @staticmethod
     def from_smiles(smiles: str) -> 'MolecularGraph':
-        """Create molecular graph from SMILES."""
+        """Create molecular graph from SMILES with debug logging."""
         graph = MolecularGraph()
         try:
+            graph.logger.warning(f"\nParsing SMILES: {smiles}")
             mol = Chem.MolFromSmiles(smiles)
             if mol is None:
                 raise ValueError(f"Failed to parse SMILES: {smiles}")
 
             Chem.SanitizeMol(mol)
             mol = Chem.AddHs(mol)
+
+            # Log molecule composition
+            graph.logger.warning(f"Molecule composition:")
+            for atom in mol.GetAtoms():
+                graph.logger.warning(f"Atom {atom.GetIdx()}: {atom.GetSymbol()}")
+                graph.logger.warning(f"  Charge: {atom.GetFormalCharge()}")
+                graph.logger.warning(f"  Implicit Hs: {atom.GetNumImplicitHs()}")
+                graph.logger.warning(f"  Explicit Hs: {atom.GetNumExplicitHs()}")
 
             # Add atoms
             for atom in mol.GetAtoms():
@@ -46,7 +55,8 @@ class MolecularGraph:
                 )
                 graph.nodes.append(node)
 
-            # Add bonds
+            # Add bonds and log them
+            graph.logger.warning("\nBond information:")
             for bond in mol.GetBonds():
                 edge = GraphEdge(
                     from_idx=bond.GetBeginAtomIdx(),
@@ -58,10 +68,12 @@ class MolecularGraph:
                     stereo=str(bond.GetStereo())
                 )
                 graph.edges.append(edge)
+                graph.logger.warning(f"Bond {edge.from_idx}-{edge.to_idx}: {edge.bond_type}")
 
             return graph
         except Exception as e:
-            raise ValueError(f"Error creating molecular graph from SMILES: {str(e)}")
+            graph.logger.error(f"Error creating molecular graph from SMILES: {str(e)}")
+            raise
 
     def get_neighbors(self, node_id: int) -> List[Tuple[GraphNode, GraphEdge]]:
         """Get all neighbors of a node with connecting edges."""
@@ -76,28 +88,76 @@ class MolecularGraph:
         return neighbors
 
     def find_reactive_sites(self, nuc_pattern: str, elec_pattern: str) -> None:
-        """Find and mark reactive sites with debug logging."""
-        self.logger.debug(f"Finding reactive sites - nuc: {nuc_pattern}, elec: {elec_pattern}")
+        """Find and mark reactive sites with comprehensive debug output."""
+        self.logger.warning(f"\nAnalyzing molecule for reactive sites:")
+        self.logger.warning(f"Looking for nucleophile: {nuc_pattern}")
+        self.logger.warning(f"Looking for electrophile: {elec_pattern}")
 
-        # Clear existing reactive sites
+        # Print molecule composition
+        elements = [node.element for node in self.nodes]
+        self.logger.warning(f"Molecule contains {len(self.nodes)} atoms: {elements}")
+
+        # Print all bonds
+        for edge in self.edges:
+            from_atom = next(n for n in self.nodes if n.id == edge.from_idx)
+            to_atom = next(n for n in self.nodes if n.id == edge.to_idx)
+            self.logger.warning(f"Bond: {from_atom.element}{edge.from_idx}-{to_atom.element}{edge.to_idx} ({edge.bond_type})")
+
+        # Check for NH2 groups
+        self.logger.warning("\nSearching for NH2 groups:")
         for node in self.nodes:
-            node.is_reactive_nuc = False
-            node.is_reactive_elec = False
-            node.is_reactive_click = False
+            if node.element == 'N':
+                neighbors = self.get_neighbors(node.id)
+                h_count = sum(1 for n, _ in neighbors if n.element == 'H')
+                non_h_neighbors = [(n, e) for n, e in neighbors if n.element != 'H']
 
-        # Always find peptide bond sites first
-        self._find_peptide_reactive_sites()
+                self.logger.warning(f"Nitrogen {node.id}:")
+                self.logger.warning(f"  H count: {h_count}")
+                self.logger.warning(f"  Non-H neighbors: {[(n.element, e.bond_type) for n, e in non_h_neighbors]}")
 
-        # Log found peptide sites
+                if h_count == 2 and len(non_h_neighbors) == 1:
+                    n_c = non_h_neighbors[0]
+                    if n_c[0].element == 'C' and n_c[1].bond_type == 'SINGLE':
+                        node.is_reactive_nuc = True
+                        self.logger.warning(f"  Found NH2 group at N{node.id}")
+
+        # Check for COOH groups
+        self.logger.warning("\nSearching for COOH groups:")
+        for node in self.nodes:
+            if node.element == 'C':
+                neighbors = self.get_neighbors(node.id)
+                self.logger.warning(f"Carbon {node.id}:")
+                self.logger.warning(f"  Neighbors: {[(n.element, e.bond_type) for n, e in neighbors]}")
+
+                # Count different types of connections
+                double_o = False
+                single_oh = False
+                carbon_single = False
+
+                for neighbor, edge in neighbors:
+                    if neighbor.element == 'O':
+                        if edge.bond_type == 'DOUBLE':
+                            double_o = True
+                            self.logger.warning(f"  Found C=O bond")
+                        elif edge.bond_type == 'SINGLE':
+                            o_neighbors = self.get_neighbors(neighbor.id)
+                            if any(n.element == 'H' for n, _ in o_neighbors):
+                                single_oh = True
+                                self.logger.warning(f"  Found C-OH group")
+                    elif neighbor.element == 'C' and edge.bond_type == 'SINGLE':
+                        carbon_single = True
+                        self.logger.warning(f"  Found C-C bond")
+
+                if double_o and single_oh and carbon_single:
+                    node.is_reactive_elec = True
+                    self.logger.warning(f"  Found complete COOH group at C{node.id}")
+
+        # Final summary
         nuc_sites = [n for n in self.nodes if n.is_reactive_nuc]
         elec_sites = [n for n in self.nodes if n.is_reactive_elec]
-        self.logger.debug(f"Found {len(nuc_sites)} nucleophilic sites and {len(elec_sites)} electrophilic sites")
-
-        # Then handle click chemistry if needed
-        if nuc_pattern == 'N3' or elec_pattern == 'N3':
-            self._find_azide_pattern()
-        if nuc_pattern == 'C#C' or elec_pattern == 'C#C':
-            self._find_alkyne_pattern()
+        self.logger.warning("\nSummary:")
+        self.logger.warning(f"Found {len(nuc_sites)} nucleophilic sites: {[(n.id, n.element) for n in nuc_sites]}")
+        self.logger.warning(f"Found {len(elec_sites)} electrophilic sites: {[(n.id, n.element) for n in elec_sites]}")
 
     def _find_peptide_reactive_sites(self) -> None:
         """Find NH2/NH and COOH groups with detailed logging."""
