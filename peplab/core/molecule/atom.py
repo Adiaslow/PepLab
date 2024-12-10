@@ -21,6 +21,7 @@ class GraphNode:
     chiral_tag: str = 'CHI_UNSPECIFIED'
     is_reactive_nuc: bool = False
     is_reactive_elec: bool = False
+    is_reactive_click = False
 
     def to_dict(self) -> Dict:
         """Convert node to dictionary representation."""
