@@ -618,7 +618,6 @@ class PeptideBuilder:
             return False
         if is_other_terminal and len(node_other_connections) > 2:
             return False
-
         return True
 
     def validate_click_chemistry_pair(self, azide_n: GraphNode, alkyne_c: GraphNode,
@@ -627,10 +626,15 @@ class PeptideBuilder:
         Validate that the given azide nitrogen and alkyne carbon can participate
         in click chemistry reaction.
         """
-        if not (self._is_azide_nitrogen(azide_n, graph) and
-                self._is_alkyne_carbon(alkyne_c, graph)):
+        click_chemistry_pair_found = True
+        if not self._is_azide_nitrogen(azide_n, graph):
+            print("Azide nitrogen not valid")
+            click_chemistry_pair_found = False
+        if not self._is_alkyne_carbon(alkyne_c, graph):
+            print("Alkyne carbon not valid")
+            click_chemistry_pair_found = False
+        if not click_chemistry_pair_found:
             return False
-
         return True
 
     def _get_connected_atoms(self, node_id: int, graph: MolecularGraph) -> List[GraphNode]:
