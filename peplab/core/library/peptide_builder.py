@@ -167,28 +167,7 @@ class PeptideBuilder:
         return peptide
 
     def _form_peptide_bond(self, res1: MolecularGraph, res2: MolecularGraph) -> MolecularGraph:
-        """Form peptide bond between residues with detailed debug output."""
-        self.logger.warning("\nAttempting to form peptide bond:")
-
-        # Log first residue details
-        self.logger.warning("First residue details:")
-        for node in res1.nodes:
-            if node.element == 'N':
-                neighbors = res1.get_neighbors(node.id)
-                self.logger.warning(f"N{node.id}:")
-                self.logger.warning(f"  Is reactive: {node.is_reactive_nuc}")
-                self.logger.warning(f"  Neighbors: {[(n.element, e.bond_type) for n, e in neighbors]}")
-
-        # Log second residue details
-        self.logger.warning("\nSecond residue details:")
-        for node in res2.nodes:
-            if node.element == 'C':
-                neighbors = res2.get_neighbors(node.id)
-                self.logger.warning(f"C{node.id}:")
-                self.logger.warning(f"  Is reactive: {node.is_reactive_elec}")
-                self.logger.warning(f"  Neighbors: {[(n.element, e.bond_type) for n, e in neighbors]}")
-
-        # Find reactive sites
+        """Form peptide bond between residues."""
         nuc_site = next(
             (n for n in res1.nodes if n.is_reactive_nuc and not n.is_reactive_click),
             None
@@ -198,12 +177,8 @@ class PeptideBuilder:
             None
         )
 
-        # Log found sites
-        self.logger.warning("\nReactive sites found:")
-        self.logger.warning(f"Nucleophilic site: {nuc_site.id if nuc_site else None}")
-        self.logger.warning(f"Electrophilic site: {elec_site.id if elec_site else None}")
-
         if not (nuc_site and elec_site):
+            self.logger.warning(f"Failed to find reactive sites - NH2: {nuc_site is not None}, COOH: {elec_site is not None}")
             raise ValueError("Could not find required reactive sites for peptide bond formation")
 
         res1_mod = copy.deepcopy(res1)
