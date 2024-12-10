@@ -167,13 +167,13 @@ class PeptideBuilder:
         return peptide
 
     def _form_peptide_bond(self, res1: MolecularGraph, res2: MolecularGraph) -> MolecularGraph:
-        """Form peptide bond between residues."""
+        """Form peptide bond between residues using only peptide reactive sites."""
         nuc_site = next(
-            (n for n in res1.nodes if n.is_reactive_nuc),
+            (n for n in res1.nodes if n.is_reactive_nuc and not n.is_reactive_click),
             None
         )
         elec_site = next(
-            (n for n in res2.nodes if n.is_reactive_elec),
+            (n for n in res2.nodes if n.is_reactive_elec and not n.is_reactive_click),
             None
         )
 
@@ -271,9 +271,9 @@ class PeptideBuilder:
         """Check if the combination has valid azide and alkyne pairs for click chemistry."""
         # Find residues with potential azide/alkyne groups
         azide_residues = [res for res in combo
-                          if res.get('nuc') == 'N3' or res.get('elec') == 'N3']
+                            if res.get('nuc') == 'N3' or res.get('elec') == 'N3']
         alkyne_residues = [res for res in combo
-                           if res.get('nuc') == 'C#C' or res.get('elec') == 'C#C']
+                            if res.get('nuc') == 'C#C' or res.get('elec') == 'C#C']
 
         if not (azide_residues and alkyne_residues):
             return False
@@ -281,10 +281,8 @@ class PeptideBuilder:
         # For each potential pair, validate the reactive sites
         for azide_res in azide_residues:
             graph = azide_res['graph']
-            # Find the azide nitrogen (could be nucleophile or electrophile)
-            azide_n = next((n for n in graph.nodes
-                           if n.is_reactive_nuc or n.is_reactive_elec), None)
-            if not azide_n or not self._is_azide_nitrogen(azide_n, graph):
+            azide_n = next((n for n in graph.nodes if n.is_reactive_click), None)
+            if not azide_n:
                 continue
 
             for alkyne_res in alkyne_residues:
@@ -292,10 +290,8 @@ class PeptideBuilder:
                     continue
 
                 graph = alkyne_res['graph']
-                # Find the alkyne carbon (could be nucleophile or electrophile)
-                alkyne_c = next((n for n in graph.nodes
-                               if n.is_reactive_nuc or n.is_reactive_elec), None)
-                if not alkyne_c or not self._is_alkyne_carbon(alkyne_c, graph):
+                alkyne_c = next((n for n in graph.nodes if n.is_reactive_click), None)
+                if not alkyne_c:
                     continue
 
                 # If we find a valid pair, return True
@@ -305,19 +301,17 @@ class PeptideBuilder:
         return False
 
     def click_cyclize_peptide(self, linear_peptide: MolecularGraph) -> MolecularGraph:
-        """
-        Form triazole ring through copper-catalyzed azide-alkyne cycloaddition (CuAAC).
-        Creates a 1,4-disubstituted 1,2,3-triazole ring with correct alternating single/double bonds.
-        Pattern: N1-N2=N3-C4=C5-N1
-        """
+        """Form triazole ring through click chemistry cyclization."""
         cyclic = copy.deepcopy(linear_peptide)
 
-        # Find azide and alkyne sites
-        azide_site = next((n for n in cyclic.nodes if n.is_reactive_nuc), None)
-        alkyne_site = next((n for n in cyclic.nodes if n.is_reactive_elec), None)
+        # Find azide and alkyne sites (using click reactive sites)
+        azide_site = next((n for n in cyclic.nodes if n.is_reactive_click
+                            and n.element == 'N'), None)
+        alkyne_site = next((n for n in cyclic.nodes if n.is_reactive_click
+                            and n.element == 'C'), None)
 
         if not azide_site or not alkyne_site:
-            raise ValueError("Cannot find required reactive sites for click reaction")
+            raise ValueError("Cannot find required click chemistry reactive sites")
 
         # Find the complete azide chain
         azide_chain = []
@@ -621,21 +615,12 @@ class PeptideBuilder:
         return True
 
     def validate_click_chemistry_pair(self, azide_n: GraphNode, alkyne_c: GraphNode,
-                                    graph: MolecularGraph) -> bool:
-        """
-        Validate that the given azide nitrogen and alkyne carbon can participate
-        in click chemistry reaction.
-        """
-        click_chemistry_pair_found = True
-        if not self._is_azide_nitrogen(azide_n, graph):
-            print("Azide nitrogen not valid")
-            click_chemistry_pair_found = False
-        if not self._is_alkyne_carbon(alkyne_c, graph):
-            print("Alkyne carbon not valid")
-            click_chemistry_pair_found = False
-        if not click_chemistry_pair_found:
-            return False
-        return True
+                                        graph: MolecularGraph) -> bool:
+            """Validate that the given pair can participate in click chemistry."""
+            if not (azide_n.is_reactive_click and alkyne_c.is_reactive_click):
+                return False
+
+            return True
 
     def _get_connected_atoms(self, node_id: int, graph: MolecularGraph) -> List[GraphNode]:
         """Get all atoms connected to the given node."""
@@ -663,18 +648,21 @@ class PeptideBuilder:
         return nitrogens
 
     def cyclize_peptide(self, linear_peptide: MolecularGraph) -> MolecularGraph:
-        """Cyclize linear peptide."""
+        """Cyclize linear peptide using peptide bond formation."""
+        # Find peptide bond reactive sites (not click sites)
         nuc_site = next(
-            (n for n in linear_peptide.nodes if n.is_reactive_nuc),
+            (n for n in linear_peptide.nodes
+                if n.is_reactive_nuc and not n.is_reactive_click),
             None
         )
         elec_site = next(
-            (n for n in linear_peptide.nodes if n.is_reactive_elec),
+            (n for n in linear_peptide.nodes
+                if n.is_reactive_elec and not n.is_reactive_click),
             None
         )
 
         if not (nuc_site and elec_site):
-            raise ValueError("Cannot find terminal reactive sites")
+            raise ValueError("Cannot find terminal reactive sites for cyclization")
 
         cyclic = copy.deepcopy(linear_peptide)
         cyclic = self._remove_h_from_nh(cyclic, nuc_site.id)
