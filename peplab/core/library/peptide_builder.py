@@ -100,6 +100,14 @@ class PeptideBuilder:
                             'nuc': res_info.nucleophile,
                             'elec': res_info.electrophile
                         })
+
+                        # Add debug print
+                        reactive_nuc = [n for n in graph.nodes if n.is_reactive_nuc]
+                        reactive_elec = [n for n in graph.nodes if n.is_reactive_elec]
+                        print(f"Residue {res_info.name}:")
+                        print(f"Nucleophile '{res_info.nucleophile}' sites: {len(reactive_nuc)}")
+                        print(f"Electrophile '{res_info.electrophile}' sites: {len(reactive_elec)}")
+
                     except Exception as e:
                         self.logger.error(
                             f"Error processing residue {res_info.name}: {str(e)}"
