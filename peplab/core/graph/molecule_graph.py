@@ -88,115 +88,45 @@ class MolecularGraph:
         return neighbors
 
     def find_reactive_sites(self, nuc_pattern: str, elec_pattern: str) -> None:
-        """Find and mark reactive sites with comprehensive debug output."""
-        self.logger.warning(f"\nAnalyzing molecule for reactive sites:")
-        self.logger.warning(f"Looking for nucleophile: {nuc_pattern}")
-        self.logger.warning(f"Looking for electrophile: {elec_pattern}")
+        """Find and mark reactive sites with focused logging."""
+        # Clear existing sites
+        for node in self.nodes:
+            node.is_reactive_nuc = False
+            node.is_reactive_elec = False
+            node.is_reactive_click = False
 
-        # Print molecule composition
-        elements = [node.element for node in self.nodes]
-        self.logger.warning(f"Molecule contains {len(self.nodes)} atoms: {elements}")
+        # Search for NH2/COOH
+        self._find_peptide_reactive_sites()
 
-        # Print all bonds
-        for edge in self.edges:
-            from_atom = next(n for n in self.nodes if n.id == edge.from_idx)
-            to_atom = next(n for n in self.nodes if n.id == edge.to_idx)
-            self.logger.warning(f"Bond: {from_atom.element}{edge.from_idx}-{to_atom.element}{edge.to_idx} ({edge.bond_type})")
+        # Check click chemistry patterns
+        if nuc_pattern == 'N3' or elec_pattern == 'N3':
+            self._find_azide_pattern()
+        if nuc_pattern == 'C#C' or elec_pattern == 'C#C':
+            self._find_alkyne_pattern()
 
-        # Check for NH2 groups
-        self.logger.warning("\nSearching for NH2 groups:")
+    def _find_peptide_reactive_sites(self) -> None:
+        """Find NH2/NH and COOH groups with minimal logging."""
+        found_nh2 = False
+        found_cooh = False
+
+        # Find NH2 groups
         for node in self.nodes:
             if node.element == 'N':
                 neighbors = self.get_neighbors(node.id)
                 h_count = sum(1 for n, _ in neighbors if n.element == 'H')
                 non_h_neighbors = [(n, e) for n, e in neighbors if n.element != 'H']
 
-                self.logger.warning(f"Nitrogen {node.id}:")
-                self.logger.warning(f"  H count: {h_count}")
-                self.logger.warning(f"  Non-H neighbors: {[(n.element, e.bond_type) for n, e in non_h_neighbors]}")
-
-                if h_count == 2 and len(non_h_neighbors) == 1:
-                    n_c = non_h_neighbors[0]
-                    if n_c[0].element == 'C' and n_c[1].bond_type == 'SINGLE':
-                        node.is_reactive_nuc = True
-                        self.logger.warning(f"  Found NH2 group at N{node.id}")
-
-        # Check for COOH groups
-        self.logger.warning("\nSearching for COOH groups:")
-        for node in self.nodes:
-            if node.element == 'C':
-                neighbors = self.get_neighbors(node.id)
-                self.logger.warning(f"Carbon {node.id}:")
-                self.logger.warning(f"  Neighbors: {[(n.element, e.bond_type) for n, e in neighbors]}")
-
-                # Count different types of connections
-                double_o = False
-                single_oh = False
-                carbon_single = False
-
-                for neighbor, edge in neighbors:
-                    if neighbor.element == 'O':
-                        if edge.bond_type == 'DOUBLE':
-                            double_o = True
-                            self.logger.warning(f"  Found C=O bond")
-                        elif edge.bond_type == 'SINGLE':
-                            o_neighbors = self.get_neighbors(neighbor.id)
-                            if any(n.element == 'H' for n, _ in o_neighbors):
-                                single_oh = True
-                                self.logger.warning(f"  Found C-OH group")
-                    elif neighbor.element == 'C' and edge.bond_type == 'SINGLE':
-                        carbon_single = True
-                        self.logger.warning(f"  Found C-C bond")
-
-                if double_o and single_oh and carbon_single:
-                    node.is_reactive_elec = True
-                    self.logger.warning(f"  Found complete COOH group at C{node.id}")
-
-        # Final summary
-        nuc_sites = [n for n in self.nodes if n.is_reactive_nuc]
-        elec_sites = [n for n in self.nodes if n.is_reactive_elec]
-        self.logger.warning("\nSummary:")
-        self.logger.warning(f"Found {len(nuc_sites)} nucleophilic sites: {[(n.id, n.element) for n in nuc_sites]}")
-        self.logger.warning(f"Found {len(elec_sites)} electrophilic sites: {[(n.id, n.element) for n in elec_sites]}")
-
-    def _find_peptide_reactive_sites(self) -> None:
-        """Find NH2/NH and COOH groups with detailed logging."""
-        # Find NH2 groups
-        for node in self.nodes:
-            if node.element == 'N':
-                neighbors = self.get_neighbors(node.id)
-                non_h_neighbors = [(n, e) for n, e in neighbors if n.element != 'H']
-                h_neighbors = [(n, e) for n, e in neighbors if n.element == 'H']
-
-                self.logger.debug(f"Nitrogen atom {node.id}: {len(non_h_neighbors)} non-H neighbors, {len(h_neighbors)} H neighbors")
-
                 # Check for NH2 pattern
-                if (len(non_h_neighbors) == 1 and  # One non-H neighbor
-                    len(h_neighbors) == 2 and      # Two H neighbors
-                    non_h_neighbors[0][0].element == 'C' and  # Connected to carbon
-                    non_h_neighbors[0][1].bond_type == 'SINGLE'):  # By single bond
+                if (len(non_h_neighbors) == 1 and h_count == 2 and
+                    non_h_neighbors[0][0].element == 'C' and
+                    non_h_neighbors[0][1].bond_type == 'SINGLE'):
                     node.is_reactive_nuc = True
-                    self.logger.debug(f"Found NH2 group at nitrogen {node.id}")
-                    continue
-
-                # Check for NH pattern (secondary amine)
-                if (len(non_h_neighbors) == 2 and  # Two non-H neighbors
-                    len(h_neighbors) == 1 and      # One H neighbor
-                    all(n.element == 'C' and e.bond_type == 'SINGLE'
-                        for n, e in non_h_neighbors)):  # Connected to carbons by single bonds
-                    node.is_reactive_nuc = True
-                    self.logger.debug(f"Found NH group at nitrogen {node.id}")
+                    found_nh2 = True
 
         # Find COOH groups
         for node in self.nodes:
             if node.element == 'C':
                 neighbors = self.get_neighbors(node.id)
-
-                # Log all neighbors for debugging
-                neighbor_info = [(n.element, e.bond_type) for n, e in neighbors]
-                self.logger.debug(f"Carbon atom {node.id} neighbors: {neighbor_info}")
-
-                # Count different types of connections
                 double_o = False
                 single_oh = False
                 carbon_single = False
@@ -205,21 +135,19 @@ class MolecularGraph:
                     if neighbor.element == 'O':
                         if edge.bond_type == 'DOUBLE':
                             double_o = True
-                            self.logger.debug(f"Found C=O at carbon {node.id}")
                         elif edge.bond_type == 'SINGLE':
-                            # Check if this O has a hydrogen
                             o_neighbors = self.get_neighbors(neighbor.id)
                             if any(n.element == 'H' for n, _ in o_neighbors):
                                 single_oh = True
-                                self.logger.debug(f"Found C-OH at carbon {node.id}")
-                    elif (neighbor.element == 'C' and
-                            edge.bond_type == 'SINGLE'):
+                    elif neighbor.element == 'C' and edge.bond_type == 'SINGLE':
                         carbon_single = True
-                        self.logger.debug(f"Found C-C at carbon {node.id}")
 
                 if double_o and single_oh and carbon_single:
                     node.is_reactive_elec = True
-                    self.logger.debug(f"Found complete COOH group at carbon {node.id}")
+                    found_cooh = True
+
+        if not (found_nh2 and found_cooh):
+            self.logger.warning(f"Missing reactive sites - NH2: {found_nh2}, COOH: {found_cooh}")
 
     def _find_azide_pattern(self) -> None:
         """Find azide (N3) group."""
