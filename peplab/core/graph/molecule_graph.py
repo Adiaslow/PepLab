@@ -57,7 +57,7 @@ class MolecularGraph:
                 graph.nodes.append(node)
 
             # Add bonds and log them
-            graph.logger.warning("\nBond information:")
+            # graph.logger.warning("\nBond information:")
             for bond in mol.GetBonds():
                 edge = GraphEdge(
                     from_idx=bond.GetBeginAtomIdx(),
@@ -69,7 +69,7 @@ class MolecularGraph:
                     stereo=str(bond.GetStereo())
                 )
                 graph.edges.append(edge)
-                graph.logger.warning(f"Bond {edge.from_idx}-{edge.to_idx}: {edge.bond_type}")
+                # graph.logger.warning(f"Bond {edge.from_idx}-{edge.to_idx}: {edge.bond_type}")
 
             return graph
         except Exception as e:
