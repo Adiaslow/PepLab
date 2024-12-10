@@ -267,16 +267,3 @@ class MolecularGraph:
             'nodes': [n.to_dict() for n in self.nodes],
             'edges': [e.to_dict() for e in self.edges]
         }
-
-    def print_node_info(self) -> None:
-        """Print detailed information about all nodes for debugging."""
-        self.logger.debug("\nNode Information:")
-        for node in self.nodes:
-            neighbors = self.get_neighbors(node.id)
-            neighbor_info = [(n.element, e.bond_type) for n, e in neighbors]
-            self.logger.debug(f"Node {node.id}:")
-            self.logger.debug(f"  Element: {node.element}")
-            self.logger.debug(f"  Neighbors: {neighbor_info}")
-            self.logger.debug(f"  Is reactive nuc: {node.is_reactive_nuc}")
-            self.logger.debug(f"  Is reactive elec: {node.is_reactive_elec}")
-            self.logger.debug(f"  Is reactive click: {node.is_reactive_click}")
