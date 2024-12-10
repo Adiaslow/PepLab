@@ -5,6 +5,8 @@ from rdkit import Chem
 from ..molecule.atom import GraphNode
 from ..molecule.bond import GraphEdge
 
+logging.basicConfig(level=logging.DEBUG)
+
 class MolecularGraph:
     def __init__(self):
         self.nodes: List[GraphNode] = []
@@ -74,23 +76,31 @@ class MolecularGraph:
         return neighbors
 
     def find_reactive_sites(self, nuc_pattern: str, elec_pattern: str) -> None:
-        """Find and mark reactive sites for both peptide bonds and click chemistry."""
-        # Always look for peptide bond sites first
+        """Find and mark reactive sites with debug logging."""
+        self.logger.debug(f"Finding reactive sites - nuc: {nuc_pattern}, elec: {elec_pattern}")
+
+        # Clear existing reactive sites
+        for node in self.nodes:
+            node.is_reactive_nuc = False
+            node.is_reactive_elec = False
+            node.is_reactive_click = False
+
+        # Always find peptide bond sites first
         self._find_peptide_reactive_sites()
 
-        # Then look for click chemistry sites if specified
+        # Log found peptide sites
+        nuc_sites = [n for n in self.nodes if n.is_reactive_nuc]
+        elec_sites = [n for n in self.nodes if n.is_reactive_elec]
+        self.logger.debug(f"Found {len(nuc_sites)} nucleophilic sites and {len(elec_sites)} electrophilic sites")
+
+        # Then handle click chemistry if needed
         if nuc_pattern == 'N3' or elec_pattern == 'N3':
             self._find_azide_pattern()
         if nuc_pattern == 'C#C' or elec_pattern == 'C#C':
             self._find_alkyne_pattern()
 
     def _find_peptide_reactive_sites(self) -> None:
-        """Find NH2/NH and COOH groups for peptide bond formation."""
-        # First clear any existing reactive site markings
-        for node in self.nodes:
-            node.is_reactive_nuc = False
-            node.is_reactive_elec = False
-
+        """Find NH2/NH and COOH groups with detailed logging."""
         # Find NH2 groups
         for node in self.nodes:
             if node.element == 'N':
@@ -98,12 +108,15 @@ class MolecularGraph:
                 non_h_neighbors = [(n, e) for n, e in neighbors if n.element != 'H']
                 h_neighbors = [(n, e) for n, e in neighbors if n.element == 'H']
 
+                self.logger.debug(f"Nitrogen atom {node.id}: {len(non_h_neighbors)} non-H neighbors, {len(h_neighbors)} H neighbors")
+
                 # Check for NH2 pattern
                 if (len(non_h_neighbors) == 1 and  # One non-H neighbor
                     len(h_neighbors) == 2 and      # Two H neighbors
                     non_h_neighbors[0][0].element == 'C' and  # Connected to carbon
                     non_h_neighbors[0][1].bond_type == 'SINGLE'):  # By single bond
                     node.is_reactive_nuc = True
+                    self.logger.debug(f"Found NH2 group at nitrogen {node.id}")
                     continue
 
                 # Check for NH pattern (secondary amine)
@@ -112,11 +125,16 @@ class MolecularGraph:
                     all(n.element == 'C' and e.bond_type == 'SINGLE'
                         for n, e in non_h_neighbors)):  # Connected to carbons by single bonds
                     node.is_reactive_nuc = True
+                    self.logger.debug(f"Found NH group at nitrogen {node.id}")
 
         # Find COOH groups
         for node in self.nodes:
             if node.element == 'C':
                 neighbors = self.get_neighbors(node.id)
+
+                # Log all neighbors for debugging
+                neighbor_info = [(n.element, e.bond_type) for n, e in neighbors]
+                self.logger.debug(f"Carbon atom {node.id} neighbors: {neighbor_info}")
 
                 # Count different types of connections
                 double_o = False
@@ -127,17 +145,21 @@ class MolecularGraph:
                     if neighbor.element == 'O':
                         if edge.bond_type == 'DOUBLE':
                             double_o = True
+                            self.logger.debug(f"Found C=O at carbon {node.id}")
                         elif edge.bond_type == 'SINGLE':
                             # Check if this O has a hydrogen
                             o_neighbors = self.get_neighbors(neighbor.id)
                             if any(n.element == 'H' for n, _ in o_neighbors):
                                 single_oh = True
+                                self.logger.debug(f"Found C-OH at carbon {node.id}")
                     elif (neighbor.element == 'C' and
-                          edge.bond_type == 'SINGLE'):
+                            edge.bond_type == 'SINGLE'):
                         carbon_single = True
+                        self.logger.debug(f"Found C-C at carbon {node.id}")
 
                 if double_o and single_oh and carbon_single:
                     node.is_reactive_elec = True
+                    self.logger.debug(f"Found complete COOH group at carbon {node.id}")
 
     def _find_azide_pattern(self) -> None:
         """Find azide (N3) group."""
@@ -257,3 +279,16 @@ class MolecularGraph:
             'nodes': [n.to_dict() for n in self.nodes],
             'edges': [e.to_dict() for e in self.edges]
         }
+
+    def print_node_info(self) -> None:
+        """Print detailed information about all nodes for debugging."""
+        self.logger.debug("\nNode Information:")
+        for node in self.nodes:
+            neighbors = self.get_neighbors(node.id)
+            neighbor_info = [(n.element, e.bond_type) for n, e in neighbors]
+            self.logger.debug(f"Node {node.id}:")
+            self.logger.debug(f"  Element: {node.element}")
+            self.logger.debug(f"  Neighbors: {neighbor_info}")
+            self.logger.debug(f"  Is reactive nuc: {node.is_reactive_nuc}")
+            self.logger.debug(f"  Is reactive elec: {node.is_reactive_elec}")
+            self.logger.debug(f"  Is reactive click: {node.is_reactive_click}")
