@@ -32,12 +32,8 @@ class PeptideBuilder:
     def _process_combination(self, combo: tuple) -> Optional[PeptideInfo]:
         """Process a single combination of residues."""
         try:
-            # Build linear peptide
             residue_graphs = [res['graph'] for res in combo]
             peptide = self.build_linear_peptide(residue_graphs)
-
-            # Remove protecting groups before cyclization
-            peptide = self.remove_protecting_groups(peptide)
 
             # Check if click chemistry is possible
             if self._cyclize and self._has_click_pairs(combo):
@@ -100,14 +96,6 @@ class PeptideBuilder:
                             'nuc': res_info.nucleophile,
                             'elec': res_info.electrophile
                         })
-
-                        # Add debug print
-                        reactive_nuc = [n for n in graph.nodes if n.is_reactive_nuc]
-                        reactive_elec = [n for n in graph.nodes if n.is_reactive_elec]
-                        print(f"Residue {res_info.name}:")
-                        print(f"Nucleophile '{res_info.nucleophile}' sites: {len(reactive_nuc)}")
-                        print(f"Electrophile '{res_info.electrophile}' sites: {len(reactive_elec)}")
-
                     except Exception as e:
                         self.logger.error(
                             f"Error processing residue {res_info.name}: {str(e)}"
@@ -165,191 +153,6 @@ class PeptideBuilder:
         except Exception as e:
             self.logger.error(f"Error enumerating library: {str(e)}")
             return []
-
-    def remove_protecting_groups(self, protected_peptide: MolecularGraph) -> MolecularGraph:
-        """
-        Remove protecting groups from a peptide structure.
-        Currently handles common protecting groups: Boc (tert-butyloxycarbonyl),
-        Fmoc (fluorenylmethyloxycarbonyl), and Cbz (benzyloxycarbonyl).
-
-        Args:
-            protected_peptide: MolecularGraph with protecting groups
-
-        Returns:
-            MolecularGraph with protecting groups removed
-        """
-        deprotected = copy.deepcopy(protected_peptide)
-
-        # Define protecting group patterns
-        PROTECTING_GROUPS = {
-            'Boc': {
-                'core': ['C', 'O', 'O', 'C', 'C', 'C', 'C'],  # C(CH3)3-O-C(=O)-
-                'bonds': [
-                    ('SINGLE', 'C', 'O'),   # C-O
-                    ('SINGLE', 'O', 'C'),   # O-C
-                    ('DOUBLE', 'C', 'O'),   # C=O
-                    ('SINGLE', 'C', 'C'),   # C-C(CH3)3
-                    ('SINGLE', 'C', 'C'),   # C-CH3
-                    ('SINGLE', 'C', 'C'),   # C-CH3
-                    ('SINGLE', 'C', 'C')    # C-CH3
-                ]
-            },
-            'Fmoc': {
-                'core': ['C', 'O', 'O', 'C', 'C', 'C'],  # Fluorene-CH2-O-C(=O)-
-                'bonds': [
-                    ('SINGLE', 'C', 'O'),   # C-O
-                    ('SINGLE', 'O', 'C'),   # O-C
-                    ('DOUBLE', 'C', 'O'),   # C=O
-                    ('SINGLE', 'C', 'C'),   # CH2 bridge
-                    ('AROMATIC', 'C', 'C'), # Fluorene core
-                    ('AROMATIC', 'C', 'C')  # Fluorene core
-                ]
-            },
-            'Cbz': {
-                'core': ['C', 'O', 'O', 'C', 'C', 'C'],  # Ph-CH2-O-C(=O)-
-                'bonds': [
-                    ('SINGLE', 'C', 'O'),   # C-O
-                    ('SINGLE', 'O', 'C'),   # O-C
-                    ('DOUBLE', 'C', 'O'),   # C=O
-                    ('SINGLE', 'C', 'C'),   # CH2 bridge
-                    ('AROMATIC', 'C', 'C'), # Phenyl ring
-                    ('AROMATIC', 'C', 'C')  # Phenyl ring
-                ]
-            }
-        }
-
-        for protecting_group, pattern in PROTECTING_GROUPS.items():
-            # Find potential protecting group attachment points (usually N atoms)
-            attachment_points = [n for n in deprotected.nodes if n.element == 'N']
-
-            for attachment in attachment_points:
-                # Look for protecting group pattern starting from the attachment point
-                protecting_group_atoms = self._find_protecting_group(
-                    deprotected,
-                    attachment.id,
-                    pattern['core'],
-                    pattern['bonds']
-                )
-
-                if protecting_group_atoms:
-                    print(f"Found protecting group {protecting_group} at atom {attachment.id}")
-                    # Remove protecting group and restore NH
-                    nodes_to_remove = []
-                    edges_to_remove = []
-
-                    # Collect all atoms and bonds in the protecting group
-                    for atom_id in protecting_group_atoms:
-                        node = next(n for n in deprotected.nodes if n.id == atom_id)
-                        nodes_to_remove.append(node)
-
-                        # Collect all edges connected to this atom
-                        for edge in deprotected.edges:
-                            if edge.from_idx == atom_id or edge.to_idx == atom_id:
-                                edges_to_remove.append(edge)
-
-                    # Remove protecting group components
-                    for edge in edges_to_remove:
-                        if edge in deprotected.edges:
-                            deprotected.edges.remove(edge)
-                    for node in nodes_to_remove:
-                        if node in deprotected.nodes:
-                            deprotected.nodes.remove(node)
-
-                    # Add H to the attachment point
-                    max_id = max(n.id for n in deprotected.nodes) + 1
-                    h_node = GraphNode(
-                        id=max_id,
-                        element='H',
-                        is_aromatic=False,
-                        is_reactive_nuc=False,
-                        is_reactive_elec=False,
-                        implicit_h_count=0,
-                        explicit_h_count=0,
-                        formal_charge=0
-                    )
-                    deprotected.nodes.append(h_node)
-
-                    # Add bond between N and H
-                    deprotected.edges.append(GraphEdge(
-                        from_idx=attachment.id,
-                        to_idx=h_node.id,
-                        bond_type='SINGLE',
-                        is_aromatic=False,
-                        is_conjugated=False,
-                        in_ring=False,
-                        stereo='NONE'
-                    ))
-
-        return self._reindex_graph(deprotected)
-
-    def _find_protecting_group(
-        self,
-        graph: MolecularGraph,
-        start_id: int,
-        core_pattern: List[str],
-        bond_pattern: List[tuple]
-    ) -> Optional[List[int]]:
-        """
-        Find a protecting group pattern starting from a given atom.
-
-        Args:
-            graph: MolecularGraph to search in
-            start_id: Starting atom ID
-            core_pattern: List of elements in the protecting group
-            bond_pattern: List of (bond_type, element1, element2) tuples
-
-        Returns:
-            List of atom IDs in the protecting group if found, None otherwise
-        """
-        visited = set()
-        current_pattern = []
-        current_atoms = []
-
-        def dfs(node_id: int, pattern_idx: int) -> bool:
-            if pattern_idx >= len(core_pattern):
-                return True
-
-            if node_id in visited:
-                return False
-
-            visited.add(node_id)
-            current_node = next(n for n in graph.nodes if n.id == node_id)
-
-            if current_node.element != core_pattern[pattern_idx]:
-                visited.remove(node_id)
-                return False
-
-            current_pattern.append(current_node.element)
-            current_atoms.append(node_id)
-
-            # Check connected atoms
-            for edge in graph.edges:
-                if edge.from_idx == node_id:
-                    next_id = edge.to_idx
-                elif edge.to_idx == node_id:
-                    next_id = edge.from_idx
-                else:
-                    continue
-
-                # Verify bond pattern
-                if pattern_idx < len(bond_pattern):
-                    expected_bond = bond_pattern[pattern_idx]
-                    next_node = next(n for n in graph.nodes if n.id == next_id)
-
-                    if (edge.bond_type == expected_bond[0] and
-                        current_node.element == expected_bond[1] and
-                        next_node.element == expected_bond[2]):
-                        if dfs(next_id, pattern_idx + 1):
-                            return True
-
-            current_pattern.pop()
-            current_atoms.pop()
-            visited.remove(node_id)
-            return False
-
-        if dfs(start_id, 0):
-            return current_atoms
-        return None
 
     def build_linear_peptide(self, residue_graphs: List[MolecularGraph]) -> MolecularGraph:
         """Build linear peptide from residue graphs."""
