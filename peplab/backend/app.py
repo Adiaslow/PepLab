@@ -64,11 +64,11 @@ def generate_composition():
             result = composer.generate_library(input_data)
 
         # Flatten result for combination strategies
-        formatted_result = [
-            seq if isinstance(seq, str) else list(seq) for seq in result
-        ]
+        formatted_result = [tuple(seq) if isinstance(seq, list) else (seq,) for seq in result]
 
-        return jsonify({"result": formatted_result, "total": len(formatted_result)})
+        return "\n".join([f"{pair[0]} {pair[1]}" for pair in formatted_result])
+
+
     except Exception as e:
         # Log and return the error
         app.logger.error(f"Error generating composition: {str(e)}")
