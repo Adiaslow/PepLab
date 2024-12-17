@@ -25,7 +25,7 @@ class RDKitUtils:
             'formal_charge': atom.GetFormalCharge(),
             'implicit_valence': atom.GetImplicitValence(),
             'explicit_valence': atom.GetExplicitValence(),
-            'aromatic': atom.GetIsAromatic(),
+            'is_aromatic': atom.GetIsAromatic(),
             'hybridization': str(atom.GetHybridization()),
             'num_explicit_hs': atom.GetNumExplicitHs(),
             'num_implicit_hs': atom.GetNumImplicitHs(),
@@ -119,7 +119,7 @@ class RDKitUtils:
                 atom = Chem.Atom(node['element'])
                 atom.SetFormalCharge(node['formal_charge'])
 
-                if node['aromatic']:
+                if node['is_aromatic']:
                     atom.SetIsAromatic(True)
 
                 # Set hybridization

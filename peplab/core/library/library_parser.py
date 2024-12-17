@@ -1,20 +1,13 @@
-# @title Library Parser
-
-"""Parsers for peptide library input files.
-
-This module handles parsing of CSV and JSON input files into
-standardized LibraryInfo objects.
-"""
+# peplab/builder/parser.py
 
 import json
 import pandas as pd
 from typing import Union
 from pathlib import Path
-
+from uuid import uuid4
 from .library import LibraryInfo
 from ..molecule.residue import ResidueInfo
 from ..molecule.position import PositionInfo
-
 
 class LibraryParser:
     """Parser for peptide library input files."""
@@ -30,17 +23,7 @@ class LibraryParser:
 
     @staticmethod
     def _parse_csv(file_path: Path) -> LibraryInfo:
-        """Parse CSV file with specified format.
-
-        Expected columns:
-        - library_index
-        - position_index
-        - residue_index
-        - name
-        - smiles
-        - nucleophile
-        - electrophile
-        """
+        """Parse CSV file with specified format."""
         try:
             # Read CSV
             df = pd.read_csv(file_path)
@@ -57,7 +40,6 @@ class LibraryParser:
             # Get first library
             library_idx = df['library_index'].iloc[0]
             df = df[df['library_index'] == library_idx]
-
             positions = {}
 
             # Group by position
@@ -69,12 +51,13 @@ class LibraryParser:
                 for _, row in pos_data.iterrows():
                     residue_key = f"residue_{row['residue_index'] + 1}"
                     residues[residue_key] = ResidueInfo(
+                        id=str(uuid4()),
                         name=row['name'],
                         smiles=row['smiles'],
                         nucleophile=row['nucleophile'],
                         electrophile=row['electrophile']
                     )
-
+                    print(residues[residue_key] )
                 position_key = f"position_{pos_idx + 1}"
                 positions[position_key] = PositionInfo(residues=residues)
 
@@ -94,19 +77,10 @@ class LibraryParser:
 
     @staticmethod
     def _parse_json(file_path: Path) -> LibraryInfo:
-        """Parses a JSON file into a LibraryInfo object.
-
-        Args:
-            file_path: Path to the JSON file.
-
-        Returns:
-            LibraryInfo object containing the parsed data.
-        """
+        """Parses a JSON file into a LibraryInfo object."""
         with open(file_path, 'r') as f:
             data = json.load(f)
-
         # Get first library if multiple are present
         library_key = next(iter(data.keys()))
         library_data = data[library_key]
-
         return LibraryInfo.from_dict(library_data)

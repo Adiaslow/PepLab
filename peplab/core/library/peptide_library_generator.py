@@ -1,3 +1,4 @@
+import pandas as pd
 from pathlib import Path
 import logging
 from typing import Dict, Optional, Union, List
@@ -99,7 +100,7 @@ class PeptideLibraryGenerator:
     def analyze_peptides(
         self,
         peptides: List[PeptideInfo],
-        save_results: bool = True
+        save_results: bool = False
     ) -> Dict:
         """Analyzes generated peptides.
 
@@ -111,17 +112,19 @@ class PeptideLibraryGenerator:
             Dictionary containing analysis results.
         """
         try:
+            print(":) 7")
             # Run analysis
             df = self.analyzer.analyze(peptides)
             stats = PropertyAnalysis.calculate_statistics(df)
+            print(":) 10")
             summary = PropertyAnalysis.generate_summary(df)
-
+            print(":) 9")
             results = {
                 'dataframe': df,
                 'statistics': stats,
                 'summary': summary
             }
-
+            print(":) 8")
             if save_results:
                 self._save_analysis_results(results)
 
@@ -188,8 +191,8 @@ class PeptideLibraryGenerator:
         )
 
         # Save statistics
-        with open(self.output_dir / "statistics.json", 'w') as f:
-            json.dump(results['statistics'], f, indent=2)
+        # with open(self.output_dir / "statistics.json", 'w') as f:
+        #     json.dump(results['statistics'], f, indent=2)
 
         # Save summary
         with open(self.output_dir / "summary.txt", 'w') as f:

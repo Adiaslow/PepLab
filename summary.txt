@@ -1,0 +1,43 @@
+Peptide Library Analysis Summary
+==============================
+Total Peptides: 3
+Linear Peptides: 0
+Cyclic Peptides: 0
+
+Property Statistics:
+-------------------
+
+alogp:
+  Mean: -0.82
+  Std Dev: 0.93
+  Min: -1.85
+  Max: -0.03
+  Median: -0.59
+
+exact_mass:
+  Mean: 666.99
+  Std Dev: 158.31
+  Min: 540.25
+  Max: 844.44
+  Median: 616.28
+
+rotatable_bonds:
+  Mean: 4.33
+  Std Dev: 2.31
+  Min: 3.00
+  Max: 7.00
+  Median: 3.00
+
+hbd_count:
+  Mean: 6.00
+  Std Dev: 0.00
+  Min: 6.00
+  Max: 6.00
+  Median: 6.00
+
+hba_count:
+  Mean: 11.33
+  Std Dev: 2.31
+  Min: 10.00
+  Max: 14.00
+  Median: 10.00

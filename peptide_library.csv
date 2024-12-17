@@ -1,0 +1,4 @@
+sequence,type,smiles,alogp,exact_mass,rotatable_bonds,hbd_count,hba_count
+"['hPrg', 'L117', 'Ahx', 'dMet', 'hAzAla']",click-cyclic,CSC[C@H]1NC(=O)[C@@H](N)CCn2cc(nn2)CC[C@@H](C(=O)O)NC(=O)[C@@H]2CCCN2C(=O)CN(Cc2cncn2CC(C)C)C(=O)[C@H](C)NC(=O)CCCCCNC1=O,-0.5874999999999919,844.43777788,7,6,14
+"['hPrg', 'Gly', 'Ahx', 'dMet', 'hAzAla']",click-cyclic,CSC[C@H]1NC(=O)[C@@H](N)CCn2cc(nn2)CC[C@@H](C(=O)O)NC(=O)CNC(=O)CCCCCNC1=O,-1.848299999999992,540.247851872,3,6,10
+"['hPrg', '3Amb', 'Ahx', 'dMet', 'hAzAla']",click-cyclic,CSC[C@H]1NC(=O)[C@@H](N)CCn2cc(nn2)CC[C@@H](C(=O)O)NC(=O)c2cccc(c2)CNC(=O)CCCCCNC1=O,-0.03449999999999437,616.279152,3,6,10

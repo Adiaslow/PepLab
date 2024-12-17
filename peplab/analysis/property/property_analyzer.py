@@ -16,6 +16,7 @@ class PropertyAnalysis:
             Dictionary of property statistics.
         """
         numerical_columns = df.select_dtypes(include=['float64', 'int64']).columns
+        print(":) 11")
         stats = {}
 
         for col in numerical_columns:
@@ -26,7 +27,7 @@ class PropertyAnalysis:
                 'max': df[col].max(),
                 'median': df[col].median()
             }
-
+        print(":) 12")
         return stats
 
     @staticmethod
@@ -44,7 +45,6 @@ class PropertyAnalysis:
             Summary text.
         """
         stats = PropertyAnalysis.calculate_statistics(df)
-
         summary_lines = [
             "Peptide Library Analysis Summary",
             "==============================",

@@ -4,6 +4,7 @@ from typing import Dict
 @dataclass
 class GraphEdge:
     """Represents a bond in the molecular graph."""
+    id: str
     from_idx: int
     to_idx: int
     bond_type: str
@@ -15,6 +16,7 @@ class GraphEdge:
     def to_dict(self) -> Dict:
         """Convert edge to dictionary representation."""
         return {
+            'id': str(self.id),
             'from_idx': self.from_idx,
             'to_idx': self.to_idx,
             'bond_type': self.bond_type,
@@ -23,3 +25,6 @@ class GraphEdge:
             'in_ring': self.in_ring,
             'stereo': self.stereo
         }
+
+    def __hash__(self):
+        return hash((self.id, self.from_idx, self.to_idx))

@@ -1,24 +1,26 @@
 import logging
-from typing import List, Tuple, Optional, Dict
+from typing import List, Tuple, Dict
+from uuid import uuid4
 from rdkit import Chem
 
 from ..molecule.atom import GraphNode
 from ..molecule.bond import GraphEdge
-
-logging.basicConfig(level=logging.DEBUG)
+from ..reaction.reactive_pattern import ReactivePattern
+from ..reaction.reactive_type import ReactiveType
 
 class MolecularGraph:
     def __init__(self):
         self.nodes: List[GraphNode] = []
         self.edges: List[GraphEdge] = []
         self.logger = logging.getLogger(self.__class__.__name__)
+        self._reactive_patterns: List[ReactivePattern] = []
 
     @staticmethod
     def from_smiles(smiles: str) -> 'MolecularGraph':
-        """Create molecular graph from SMILES with debug logging."""
+        """Create molecular graph from SMILES with UUID generation."""
         graph = MolecularGraph()
         try:
-            graph.logger.warning(f"\nParsing SMILES: {smiles}")
+            graph.logger.debug(f"Parsing SMILES: {smiles}")
             mol = Chem.MolFromSmiles(smiles)
             if mol is None:
                 raise ValueError(f"Failed to parse SMILES: {smiles}")
@@ -26,25 +28,18 @@ class MolecularGraph:
             Chem.SanitizeMol(mol)
             mol = Chem.AddHs(mol)
 
-            # Log molecule composition
-            """
-            graph.logger.warning(f"Molecule composition:")
+            # Add atoms with UUIDs
             for atom in mol.GetAtoms():
-                graph.logger.warning(f"Atom {atom.GetIdx()}: {atom.GetSymbol()}")
-                graph.logger.warning(f"  Charge: {atom.GetFormalCharge()}")
-                graph.logger.warning(f"  Implicit Hs: {atom.GetNumImplicitHs()}")
-                graph.logger.warning(f"  Explicit Hs: {atom.GetNumExplicitHs()}")
-            """
-            # Add atoms
-            for atom in mol.GetAtoms():
+                idx = atom.GetIdx()
                 node = GraphNode(
-                    id=atom.GetIdx(),
+                    id=str(uuid4()),
+                    index=idx,
                     element=atom.GetSymbol(),
                     atomic_num=atom.GetAtomicNum(),
                     formal_charge=atom.GetFormalCharge(),
                     implicit_valence=atom.GetImplicitValence(),
                     explicit_valence=atom.GetExplicitValence(),
-                    aromatic=atom.GetIsAromatic(),
+                    is_aromatic=atom.GetIsAromatic(),
                     hybridization=str(atom.GetHybridization()),
                     num_explicit_hs=atom.GetNumExplicitHs(),
                     num_implicit_hs=atom.GetNumImplicitHs(),
@@ -56,10 +51,10 @@ class MolecularGraph:
                 )
                 graph.nodes.append(node)
 
-            # Add bonds and log them
-            # graph.logger.warning("\nBond information:")
+            # Add bonds with UUIDs
             for bond in mol.GetBonds():
                 edge = GraphEdge(
+                    id=str(uuid4()),
                     from_idx=bond.GetBeginAtomIdx(),
                     to_idx=bond.GetEndAtomIdx(),
                     bond_type=str(bond.GetBondType()),
@@ -69,198 +64,196 @@ class MolecularGraph:
                     stereo=str(bond.GetStereo())
                 )
                 graph.edges.append(edge)
-                # graph.logger.warning(f"Bond {edge.from_idx}-{edge.to_idx}: {edge.bond_type}")
 
             return graph
+
         except Exception as e:
             graph.logger.error(f"Error creating molecular graph from SMILES: {str(e)}")
             raise
 
-    def get_neighbors(self, node_id: int) -> List[Tuple[GraphNode, GraphEdge]]:
-        """Get all neighbors of a node with connecting edges."""
-        neighbors = []
-        for edge in self.edges:
-            if edge.from_idx == node_id:
-                neighbor = next(n for n in self.nodes if n.id == edge.to_idx)
-                neighbors.append((neighbor, edge))
-            elif edge.to_idx == node_id:
-                neighbor = next(n for n in self.nodes if n.id == edge.from_idx)
-                neighbors.append((neighbor, edge))
-        return neighbors
+    def get_neighbors(self, node_index: int) -> List[Tuple[GraphNode, GraphEdge]]:
+        """Get all neighbors of a node with connecting edges using node index."""
+        return [(n, e) for e in self.edges
+                if (e.from_idx == node_index and (n := next(n for n in self.nodes if n.index == e.to_idx)))
+                or (e.to_idx == node_index and (n := next(n for n in self.nodes if n.index == e.from_idx)))]
 
     def find_reactive_sites(self, nuc_pattern: str, elec_pattern: str) -> None:
-        """Find and mark reactive sites with focused logging."""
+        """Find and mark reactive sites with comprehensive pattern matching."""
         # Clear existing sites
+        self._reactive_patterns.clear()
         for node in self.nodes:
             node.is_reactive_nuc = False
             node.is_reactive_elec = False
             node.is_reactive_click = False
 
-        # Search for NH2/COOH
-        self._find_peptide_reactive_sites()
+        # Find primary amines (NH2)
+        self._find_amine_patterns()
 
-        # Check click chemistry patterns
+        # Find carboxyl groups (COOH)
+        self._find_carboxyl_patterns()
+
+        # Find click chemistry patterns if specified
         if nuc_pattern == 'N3' or elec_pattern == 'N3':
-            self._find_azide_pattern()
+            self._find_azide_patterns()
         if nuc_pattern == 'C#C' or elec_pattern == 'C#C':
-            self._find_alkyne_pattern()
+            self._find_alkyne_patterns()
 
-    def _find_peptide_reactive_sites(self) -> None:
-        """Find NH2/NH and COOH groups with minimal logging."""
-        found_nh2 = False
-        found_cooh = False
+        # Log found patterns
+        pattern_counts = {}
+        for pattern in self._reactive_patterns:
+            pattern_counts[pattern.type] = pattern_counts.get(pattern.type, 0) + 1
 
-        # Find NH2 groups
+        if not pattern_counts:
+            self.logger.warning("No reactive patterns found")
+        else:
+            self.logger.debug(f"Found reactive patterns: {pattern_counts}")
+
+    def _find_amine_patterns(self) -> None:
+        """Find primary and secondary amine patterns."""
         for node in self.nodes:
-            if node.element == 'N':
-                neighbors = self.get_neighbors(node.id)
-                h_count = sum(1 for n, _ in neighbors if n.element == 'H')
-                non_h_neighbors = [(n, e) for n, e in neighbors if n.element != 'H']
+            if node.element != 'N':
+                continue
 
-                # Check for NH2 pattern
-                if (len(non_h_neighbors) == 1 and h_count == 2 and
-                    non_h_neighbors[0][0].element == 'C' and
-                    non_h_neighbors[0][1].bond_type == 'SINGLE'):
+            neighbors = self.get_neighbors(node.index)
+            h_neighbors = [(n, e) for n, e in neighbors if n.element == 'H']
+            heavy_neighbors = [(n, e) for n, e in neighbors if n.element != 'H']
+
+            # Check for NH2 pattern
+            if len(h_neighbors) == 2 and len(heavy_neighbors) == 1:
+                heavy_atom, heavy_bond = heavy_neighbors[0]
+                if heavy_atom.element == 'C' and heavy_bond.bond_type == 'SINGLE':
                     node.is_reactive_nuc = True
-                    found_nh2 = True
+                    self._reactive_patterns.append(ReactivePattern(
+                        type=ReactiveType.NH2,
+                        atoms=[node, *[n for n, _ in h_neighbors], heavy_atom],
+                        bonds=[e for _, e in neighbors],
+                        pattern_id=str(uuid4())
+                    ))
 
-        # Find COOH groups
+            # Check for NH pattern
+            elif len(h_neighbors) == 1 and len(heavy_neighbors) == 2:
+                if all(n.element == 'C' and e.bond_type == 'SINGLE'
+                      for n, e in heavy_neighbors):
+                    node.is_reactive_nuc = True
+                    self._reactive_patterns.append(ReactivePattern(
+                        type=ReactiveType.NH,
+                        atoms=[node, h_neighbors[0][0], *[n for n, _ in heavy_neighbors]],
+                        bonds=[e for _, e in neighbors],
+                        pattern_id=str(uuid4())
+                    ))
+
+    def _find_carboxyl_patterns(self) -> None:
+        """Find carboxyl (COOH) patterns."""
         for node in self.nodes:
-            if node.element == 'C':
-                neighbors = self.get_neighbors(node.id)
-                double_o = False
-                single_oh = False
-                carbon_single = False
+            if node.element != 'C':
+                continue
 
-                for neighbor, edge in neighbors:
-                    if neighbor.element == 'O':
-                        if edge.bond_type == 'DOUBLE':
-                            double_o = True
-                        elif edge.bond_type == 'SINGLE':
-                            o_neighbors = self.get_neighbors(neighbor.id)
-                            if any(n.element == 'H' for n, _ in o_neighbors):
-                                single_oh = True
-                    elif neighbor.element == 'C' and edge.bond_type == 'SINGLE':
-                        carbon_single = True
+            neighbors = self.get_neighbors(node.index)
+            o_neighbors = [(n, e) for n, e in neighbors if n.element == 'O']
+            heavy_neighbors = [(n, e) for n, e in neighbors if n.element not in {'O', 'H'}]
 
-                if double_o and single_oh and carbon_single:
+            if len(o_neighbors) != 2 or not heavy_neighbors:
+                continue
+
+            # Look for C(=O)OH pattern
+            double_o = None
+            single_o = None
+            for o_atom, o_bond in o_neighbors:
+                if o_bond.bond_type == 'DOUBLE':
+                    double_o = (o_atom, o_bond)
+                elif o_bond.bond_type == 'SINGLE':
+                    o_neighbors2 = self.get_neighbors(o_atom.index)
+                    h_neighbors = [(n, e) for n, e in o_neighbors2 if n.element == 'H']
+                    if len(h_neighbors) == 1:
+                        single_o = (o_atom, o_bond)
+
+            if double_o and single_o and len(heavy_neighbors) == 1:
+                heavy_atom, heavy_bond = heavy_neighbors[0]
+                if heavy_bond.bond_type == 'SINGLE':
                     node.is_reactive_elec = True
-                    found_cooh = True
+                    self._reactive_patterns.append(ReactivePattern(
+                        type=ReactiveType.COOH,
+                        atoms=[node, double_o[0], single_o[0],
+                              next(n for n, _ in self.get_neighbors(single_o[0].index)
+                                  if n.element == 'H')],
+                        bonds=[double_o[1], single_o[1],
+                              next(e for _, e in self.get_neighbors(single_o[0].index)
+                                  if next(n for n in self.nodes
+                                        if n.index == (e.to_idx if e.from_idx == single_o[0].index
+                                                     else e.from_idx)).element == 'H')],
+                        pattern_id=str(uuid4())
+                    ))
 
-        if not (found_nh2 and found_cooh):
-            self.logger.warning(f"Missing reactive sites - NH2: {found_nh2}, COOH: {found_cooh}")
-
-    def _find_azide_pattern(self) -> None:
-        """Find azide (N3) group."""
-        # Implementation stays the same as before, but marks additional reactive site
+    def _find_azide_patterns(self) -> None:
+        """Find azide (N3) patterns."""
         for node in self.nodes:
-            if node.element == 'N':
-                neighbors = self.get_neighbors(node.id)
+            if node.element != 'N':
+                continue
 
-                # First N should have exactly two connections
-                if len(neighbors) != 2:
-                    continue
+            neighbors = self.get_neighbors(node.index)
+            if len(neighbors) != 2:
+                continue
 
-                # Find N2 connected by single bond
-                n2_pair = next(((n, e) for n, e in neighbors
-                              if n.element == 'N' and e.bond_type == 'SINGLE'), None)
-                if not n2_pair:
-                    continue
+            # Find middle nitrogen
+            n2_pair = next(((n, e) for n, e in neighbors
+                           if n.element == 'N' and e.bond_type == 'SINGLE'), None)
+            if not n2_pair:
+                continue
 
-                n2, n1_n2_bond = n2_pair
-                n2_neighbors = self.get_neighbors(n2.id)
+            n2, n1_n2_bond = n2_pair
+            n2_neighbors = self.get_neighbors(n2.index)
+            if len(n2_neighbors) != 2:
+                continue
 
-                # N2 should have exactly two connections
-                if len(n2_neighbors) != 2:
-                    continue
+            # Find terminal nitrogen
+            n3_pair = next(((n, e) for n, e in n2_neighbors
+                           if n.element == 'N' and n.index != node.index
+                           and e.bond_type == 'TRIPLE'), None)
+            if not n3_pair:
+                continue
 
-                # Find N3 connected to N2 by triple bond
-                n3_pair = next(((n, e) for n, e in n2_neighbors
-                              if n.element == 'N' and n.id != node.id
-                              and e.bond_type == 'TRIPLE'), None)
-                if not n3_pair:
-                    continue
+            n3, n2_n3_bond = n3_pair
+            if len(self.get_neighbors(n3.index)) == 1:
+                node.is_reactive_click = True
+                self._reactive_patterns.append(ReactivePattern(
+                    type=ReactiveType.AZIDE,
+                    atoms=[node, n2, n3],
+                    bonds=[n1_n2_bond, n2_n3_bond],
+                    pattern_id=str(uuid4())
+                ))
 
-                n3, n2_n3_bond = n3_pair
-
-                # Check N3 has exactly one connection
-                n3_neighbors = self.get_neighbors(n3.id)
-                if len(n3_neighbors) == 1:
-                    # Add azide as additional reactive site
-                    node.is_reactive_click = True  # Need to add this field to GraphNode
-
-    def _find_alkyne_pattern(self) -> None:
-        """Find terminal alkyne (C≡C) group."""
-        # Implementation stays the same as before, but marks additional reactive site
+    def _find_alkyne_patterns(self) -> None:
+        """Find terminal alkyne (C≡C) patterns."""
         for node in self.nodes:
-            if node.element == 'C':
-                neighbors = self.get_neighbors(node.id)
+            if node.element != 'C':
+                continue
 
-                # Find triple-bonded carbon
-                triple_bond_pair = next(((n, e) for n, e in neighbors
-                                       if n.element == 'C' and e.bond_type == 'TRIPLE'), None)
-                if not triple_bond_pair:
-                    continue
+            neighbors = self.get_neighbors(node.index)
+            triple_bond_pair = next(((n, e) for n, e in neighbors
+                                   if n.element == 'C' and e.bond_type == 'TRIPLE'), None)
+            if not triple_bond_pair:
+                continue
 
-                other_c, triple_bond = triple_bond_pair
+            other_c, triple_bond = triple_bond_pair
 
-                # Get non-triple bond connections for both carbons
-                current_other_bonds = [(n, e) for n, e in neighbors if e != triple_bond]
-                other_c_neighbors = self.get_neighbors(other_c.id)
-                other_c_other_bonds = [(n, e) for n, e in other_c_neighbors if e != triple_bond]
+            # Get non-triple bond connections
+            current_other_bonds = [(n, e) for n, e in neighbors if e != triple_bond]
+            other_c_neighbors = self.get_neighbors(other_c.index)
+            other_c_other_bonds = [(n, e) for n, e in other_c_neighbors if e != triple_bond]
 
-                # Check if either carbon is terminal
-                is_current_terminal = len(current_other_bonds) <= 1
-                is_other_terminal = len(other_c_other_bonds) <= 1
+            # Check for terminal alkyne
+            is_current_terminal = len(current_other_bonds) <= 1
+            is_other_terminal = len(other_c_other_bonds) <= 1
 
-                if ((is_current_terminal and len(other_c_other_bonds) <= 2) or
-                    (is_other_terminal and len(current_other_bonds) <= 2)):
-                    # Add alkyne as additional reactive site
-                    node.is_reactive_click = True  # Need to add this field to GraphNode
-
-    def _find_nh2_pattern(self) -> None:
-        for node in self.nodes:
-            if node.element == 'N':
-                neighbors = self.get_neighbors(node.id)
-                h_count = sum(1 for n, _ in neighbors if n.element == 'H')
-                heavy_count = sum(1 for n, _ in neighbors if n.element != 'H')
-
-                if h_count == 2 and heavy_count == 1:
-                    node.is_reactive_nuc = True
-
-    def _find_nh_pattern(self) -> None:
-        for node in self.nodes:
-            if node.element == 'N':
-                neighbors = self.get_neighbors(node.id)
-                h_count = sum(1 for n, _ in neighbors if n.element == 'H')
-                has_carbon = any(n.element == 'C' for n, _ in neighbors)
-
-                if h_count == 1 and has_carbon:
-                    node.is_reactive_nuc = True
-
-    def _find_cooh_pattern(self) -> None:
-        for node in self.nodes:
-            if node.element == 'C':
-                neighbors = self.get_neighbors(node.id)
-                double_o = False
-                single_oh = False
-                other_heavy = False
-
-                for neighbor, edge in neighbors:
-                    if neighbor.element == 'O':
-                        if edge.bond_type == 'DOUBLE':
-                            double_o = True
-                        elif edge.bond_type == 'SINGLE':
-                            o_neighbors = self.get_neighbors(neighbor.id)
-                            h_count = sum(1 for n, _ in o_neighbors if n.element == 'H')
-                            if h_count == 1:
-                                single_oh = True
-                    elif neighbor.element != 'H':
-                        if edge.bond_type == 'SINGLE':
-                            other_heavy = True
-
-                if double_o and single_oh and other_heavy:
-                    node.is_reactive_elec = True
+            if ((is_current_terminal and len(other_c_other_bonds) <= 2) or
+                (is_other_terminal and len(current_other_bonds) <= 2)):
+                node.is_reactive_click = True
+                self._reactive_patterns.append(ReactivePattern(
+                    type=ReactiveType.ALKYNE,
+                    atoms=[node, other_c],
+                    bonds=[triple_bond],
+                    pattern_id=str(uuid4())
+                ))
 
     def to_dict(self) -> Dict:
         """Convert to dictionary format."""

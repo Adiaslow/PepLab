@@ -1,17 +1,14 @@
 # @title Peptide Builder
 
-"""Peptide builder with threading support and progress tracking."""
-
 import logging
-from typing import List, Dict, Optional
-from dataclasses import dataclass
-import itertools
 from itertools import product
 import copy
 import concurrent.futures
 from tqdm import tqdm
 import threading
+from typing import List, Optional
 from queue import Queue
+from uuid import uuid4
 
 from ..graph.molecule_graph import MolecularGraph
 from ..molecule.atom import GraphNode
@@ -32,9 +29,10 @@ class PeptideBuilder:
     def _process_combination(self, combo: tuple) -> Optional[PeptideInfo]:
         """Process a single combination of residues."""
         try:
+            print(":) 1")
             residue_graphs = [res['graph'] for res in combo]
             peptide = self.build_linear_peptide(residue_graphs)
-
+            print(":) 2")
             # Check if click chemistry is possible
             if self._cyclize and self._has_click_pairs(combo):
                 peptide = self.click_cyclize_peptide(peptide)
@@ -46,10 +44,11 @@ class PeptideBuilder:
                 peptide_type = 'linear'
 
             self._progress_queue.put(1)  # Signal progress
-
+            print(":) 0")
             return PeptideInfo(
                 graph=peptide.to_dict(),
-                sequence=[res['id'] for res in combo],
+                id=str(uuid4()),
+                sequence=[res['name'] for res in combo],
                 peptide_type=peptide_type,
                 smiles=None
             )
@@ -70,9 +69,8 @@ class PeptideBuilder:
     def enumerate_library(self, library_info: LibraryInfo, cyclize: bool = False, click_cyclize: bool = False) -> List[PeptideInfo]:
         """Enumerate peptide library with threading support."""
         peptides = []
-        self._cyclize = cyclize
-        self._click_cyclize = click_cyclize  # Store click_cyclize parameter
-
+        self._cyclize = cyclize or click_cyclize
+        self._click_cyclize = click_cyclize
 
         try:
             positions = sorted(library_info.positions.keys())
@@ -92,7 +90,7 @@ class PeptideBuilder:
 
                         pos_residues.append({
                             'graph': graph,
-                            'id': res_info.name,
+                            'name': res_info.name,
                             'nuc': res_info.nucleophile,
                             'elec': res_info.electrophile
                         })
@@ -105,6 +103,7 @@ class PeptideBuilder:
                     raise ValueError(f"No valid residues for position {pos}")
 
                 residue_options.append(pos_residues)
+
 
             # Calculate total combinations
             self._total_combinations = 1
@@ -162,6 +161,7 @@ class PeptideBuilder:
         peptide = copy.deepcopy(residue_graphs[0])
 
         for i in range(1, len(residue_graphs)):
+            print(":) 3")
             peptide = self._form_peptide_bond(peptide, residue_graphs[i])
 
         return peptide
@@ -188,16 +188,16 @@ class PeptideBuilder:
         res2_mod = copy.deepcopy(res2)
 
         # Remove appropriate number of hydrogens based on amine type
-        res1_mod = self._remove_h_from_nh(res1_mod, nuc_site.id)
-        res2_mod = self._remove_oh_from_cooh(res2_mod, elec_site.id)
+        res1_mod = self._remove_h_from_nh(res1_mod, nuc_site.index )
+        res2_mod = self._remove_oh_from_cooh(res2_mod, elec_site.index )
 
         # Combine graphs with updated atom indexing
-        max_id = max(n.id for n in res1_mod.nodes) + 1
+        max_index = max(n.index  for n in res1_mod.nodes) + 1
         for node in res2_mod.nodes:
-            node.id += max_id
+            node.index  += max_index
         for edge in res2_mod.edges:
-            edge.from_idx += max_id
-            edge.to_idx += max_id
+            edge.from_idx += max_index
+            edge.to_idx += max_index
 
         combined = MolecularGraph()
         combined.nodes = res1_mod.nodes + res2_mod.nodes
@@ -205,8 +205,9 @@ class PeptideBuilder:
 
         # Form the new peptide bond
         combined.edges.append(GraphEdge(
-            from_idx=nuc_site.id,
-            to_idx=elec_site.id + max_id,
+            id=str(uuid4()),
+            from_idx=nuc_site.index,
+            to_idx=elec_site.index  + max_index,
             bond_type='SINGLE',
             is_aromatic=False,
             is_conjugated=False,
@@ -216,11 +217,11 @@ class PeptideBuilder:
 
         # Update reactive sites
         for node in combined.nodes:
-            if node.id == nuc_site.id:
+            if node.index  == nuc_site.index :
                 node.is_reactive_nuc = False
-            if node.id == elec_site.id + max_id:
+            if node.index  == elec_site.index  + max_index:
                 node.is_reactive_elec = False
-
+        print(":) 4")
         return self._reindex_graph(combined)
 
     def _get_amine_type(self, node: GraphNode, graph: MolecularGraph) -> str:
@@ -235,7 +236,7 @@ class PeptideBuilder:
         heavy_count = 0
 
         # Count connected atoms
-        for neighbor, edge in graph.get_neighbors(node.id):
+        for neighbor, edge in graph.get_neighbors(node.index ):
             if neighbor.element == 'H':
                 h_count += 1
             else:
@@ -255,7 +256,7 @@ class PeptideBuilder:
         """
         mod_graph = copy.deepcopy(graph)
         amine_type = self._get_amine_type(
-            next(n for n in mod_graph.nodes if n.id == node_id),
+            next(n for n in mod_graph.nodes if n.index  == node_id),
             mod_graph
         )
 
@@ -271,14 +272,14 @@ class PeptideBuilder:
 
             if edge.from_idx == node_id:
                 h_node = next((n for n in mod_graph.nodes
-                              if n.id == edge.to_idx and n.element == 'H'), None)
+                              if n.index  == edge.to_idx and n.element == 'H'), None)
                 if h_node:
                     edges_to_remove.append(edge)
                     nodes_to_remove.append(h_node)
                     h_removed += 1
             elif edge.to_idx == node_id:
                 h_node = next((n for n in mod_graph.nodes
-                              if n.id == edge.from_idx and n.element == 'H'), None)
+                              if n.index  == edge.from_idx and n.element == 'H'), None)
                 if h_node:
                     edges_to_remove.append(edge)
                     nodes_to_remove.append(h_node)
@@ -300,19 +301,19 @@ class PeptideBuilder:
         for edge in mod_graph.edges[:]:
             if edge.bond_type == 'SINGLE':
                 if edge.from_idx == node_id:
-                    o_node = next((n for n in mod_graph.nodes if n.id == edge.to_idx and n.element == 'O'), None)
+                    o_node = next((n for n in mod_graph.nodes if n.index  == edge.to_idx and n.element == 'O'), None)
                 elif edge.to_idx == node_id:
-                    o_node = next((n for n in mod_graph.nodes if n.id == edge.from_idx and n.element == 'O'), None)
+                    o_node = next((n for n in mod_graph.nodes if n.index  == edge.from_idx and n.element == 'O'), None)
                 else:
                     continue
 
                 if o_node:
                     # Find H attached to O
                     for h_edge in mod_graph.edges[:]:
-                        if h_edge.from_idx == o_node.id:
-                            h_node = next((n for n in mod_graph.nodes if n.id == h_edge.to_idx and n.element == 'H'), None)
-                        elif h_edge.to_idx == o_node.id:
-                            h_node = next((n for n in mod_graph.nodes if n.id == h_edge.from_idx and n.element == 'H'), None)
+                        if h_edge.from_idx == o_node.index :
+                            h_node = next((n for n in mod_graph.nodes if n.index  == h_edge.to_idx and n.element == 'H'), None)
+                        elif h_edge.to_idx == o_node.index :
+                            h_node = next((n for n in mod_graph.nodes if n.index  == h_edge.from_idx and n.element == 'H'), None)
                         else:
                             continue
 
@@ -327,204 +328,289 @@ class PeptideBuilder:
 
     def _has_click_pairs(self, combo: tuple) -> bool:
         """Check if the combination has valid azide and alkyne pairs for click chemistry."""
+        # Debug logging
+        self.logger.debug("Checking for click pairs...")
+
         # Find residues with potential azide/alkyne groups
-        azide_residues = [res for res in combo
-                            if res.get('nuc') == 'N3' or res.get('elec') == 'N3']
-        alkyne_residues = [res for res in combo
-                            if res.get('nuc') == 'C#C' or res.get('elec') == 'C#C']
+        azide_residues = []
+        alkyne_residues = []
+
+        for res in combo:
+            # Debug logging for each residue
+            self.logger.debug(f"Checking residue: {res.get('id')}")
+            self.logger.debug(f"Nuc: {res.get('nuc')}, Elec: {res.get('elec')}")
+
+            if res.get('nuc') == 'N3' or res.get('elec') == 'N3':
+                azide_residues.append(res)
+                self.logger.debug(f"Found azide residue: {res.get('id')}")
+            if res.get('nuc') == 'C#C' or res.get('elec') == 'C#C':
+                alkyne_residues.append(res)
+                self.logger.debug(f"Found alkyne residue: {res.get('id')}")
 
         if not (azide_residues and alkyne_residues):
+            self.logger.debug("No azide/alkyne pairs found")
             return False
 
         # For each potential pair, validate the reactive sites
         for azide_res in azide_residues:
             graph = azide_res['graph']
-            azide_n = next((n for n in graph.nodes if n.is_reactive_click), None)
-            if not azide_n:
-                continue
+            # Try to find any nitrogen that's part of an azide group
+            for node in graph.nodes:
+                if node.element == 'N' and self._is_azide_nitrogen(node, graph):
+                    self.logger.debug(f"Found valid azide site in {azide_res.get('index')}")
+                    azide_n = node
 
-            for alkyne_res in alkyne_residues:
-                if azide_res == alkyne_res:  # Skip same residue
-                    continue
+                    for alkyne_res in alkyne_residues:
+                        if azide_res == alkyne_res:  # Skip same residue
+                            continue
 
-                graph = alkyne_res['graph']
-                alkyne_c = next((n for n in graph.nodes if n.is_reactive_click), None)
-                if not alkyne_c:
-                    continue
+                        graph = alkyne_res['graph']
+                        alkyne_c = next((n for n in graph.nodes if n.is_reactive_click and
+                                       self._is_alkyne_carbon(n, graph)), None)
 
-                # If we find a valid pair, return True
-                if self.validate_click_chemistry_pair(azide_n, alkyne_c, graph):
-                    return True
+                        if alkyne_c:
+                            self.logger.debug(f"Found valid alkyne site in {alkyne_res.get('id')}")
+                            return True
+                        else:
+                            self.logger.debug(f"No valid alkyne site found in {alkyne_res.get('id')}")
 
+            self.logger.debug(f"No valid azide site found in {azide_res.get('id')}")
+
+        self.logger.debug("No valid click pairs found after checking all combinations")
         return False
 
     def click_cyclize_peptide(self, linear_peptide: MolecularGraph) -> MolecularGraph:
         """
         Form triazole ring through copper-catalyzed azide-alkyne cycloaddition (CuAAC).
-        Creates a 1,4-disubstituted 1,2,3-triazole ring with correct alternating single/double bonds.
-        Pattern: N1-N2=N3-C4=C5-N1
+        Creates a 1,4-disubstituted 1,2,3-triazole ring.
+        Handles both N-N≡N and N=[N+]=[N-] azide representations.
         """
+        # Track initial state
+        initial_atom_count = len(linear_peptide.nodes)
+        self.logger.debug(f"Initial atom count: {initial_atom_count}")
+
         cyclic = copy.deepcopy(linear_peptide)
 
-        # Find azide and alkyne sites
-        azide_site = next((n for n in cyclic.nodes if n.is_reactive_nuc), None)
-        alkyne_site = next((n for n in cyclic.nodes if n.is_reactive_elec), None)
+        def count_atoms_by_element(graph):
+            """Helper to count atoms by element"""
+            counts = {}
+            for node in graph.nodes:
+                counts[node.element] = counts.get(node.element, 0) + 1
+            return counts
 
-        if not azide_site or not alkyne_site:
-            raise ValueError("Cannot find required reactive sites")
+        initial_counts = count_atoms_by_element(linear_peptide)
+        self.logger.debug(f"Initial atom counts by element: {initial_counts}")
 
-        # Find the complete azide chain
+        # Find azide nitrogen chain
+        azide_start = None
         azide_chain = []
-        current = azide_site
-        while len(azide_chain) < 3:
-            azide_chain.append(current)
-            for edge in cyclic.edges:
-                if edge.from_idx == current.id:
-                    next_node = next((n for n in cyclic.nodes if n.id == edge.to_idx
-                                    and n.element == 'N' and n not in azide_chain), None)
-                    if next_node:
-                        current = next_node
-                        break
-                elif edge.to_idx == current.id:
-                    next_node = next((n for n in cyclic.nodes if n.id == edge.from_idx
-                                    and n.element == 'N' and n not in azide_chain), None)
-                    if next_node:
-                        current = next_node
-                        break
-            else:
+
+        # Look for any nitrogen that's part of an azide group
+        for node in cyclic.nodes:
+            if node.element == 'N' and self._is_azide_nitrogen(node, cyclic):
+                azide_start = node
                 break
 
-        # Find the alkyne carbons
+        if not azide_start:
+            raise ValueError("Could not find azide group starting nitrogen")
+
+        # Get connected nitrogens to find full azide chain
+        visited = {azide_start.index }
+        current = azide_start
+        azide_chain = [current]
+
+        while len(azide_chain) < 3:
+            next_n = None
+            for edge in cyclic.edges:
+                if edge.from_idx == current.index :
+                    node = next((n for n in cyclic.nodes if n.index  == edge.to_idx
+                               and n.element == 'N' and n.index  not in visited), None)
+                    if node:
+                        next_n = node
+                        break
+                elif edge.to_idx == current.index :
+                    node = next((n for n in cyclic.nodes if n.index  == edge.from_idx
+                               and n.element == 'N' and n.index  not in visited), None)
+                    if node:
+                        next_n = node
+                        break
+
+            if not next_n:
+                break
+
+            visited.add(next_n.index )
+            azide_chain.append(next_n)
+            current = next_n
+
+        # Find alkyne carbons
         alkyne_chain = []
-        current = alkyne_site
-        for edge in cyclic.edges:
-            if edge.bond_type == 'TRIPLE':
-                if edge.from_idx == current.id:
-                    next_node = next((n for n in cyclic.nodes if n.id == edge.to_idx
-                                    and n.element == 'C'), None)
-                    if next_node:
-                        alkyne_chain = [current, next_node]
-                        break
-                elif edge.to_idx == current.id:
-                    next_node = next((n for n in cyclic.nodes if n.id == edge.from_idx
-                                    and n.element == 'C'), None)
-                    if next_node:
-                        alkyne_chain = [current, next_node]
-                        break
+        for node in cyclic.nodes:
+            if node.element == 'C' and self._is_alkyne_carbon(node, cyclic):
+                alkyne_chain = [node]
+                # Find the connected triple-bonded carbon
+                for edge in cyclic.edges:
+                    if edge.bond_type == 'TRIPLE':
+                        if edge.from_idx == node.index:
+                            other_c = next((n for n in cyclic.nodes if n.index == edge.to_idx
+                                          and n.element == 'C'), None)
+                            if other_c:
+                                alkyne_chain.append(other_c)
+                                break
+                        elif edge.to_idx == node.index:
+                            other_c = next((n for n in cyclic.nodes if n.index == edge.from_idx
+                                          and n.element == 'C'), None)
+                            if other_c:
+                                alkyne_chain.append(other_c)
+                                break
+                if len(alkyne_chain) == 2:
+                    break
 
         if len(azide_chain) != 3 or len(alkyne_chain) != 2:
             raise ValueError("Could not find complete azide or alkyne groups")
 
-        # Remove all existing bonds between atoms in the chains
+        self.logger.debug(f"Found azide chain with {len(azide_chain)} N atoms")
+        self.logger.debug(f"Found alkyne chain with {len(alkyne_chain)} C atoms")
+
+        # Track atoms to be removed
+        atoms_to_remove = set()
         edges_to_remove = []
+
+        # Remove existing bonds between azide nitrogens while keeping track of removed atoms
         for edge in cyclic.edges:
-            from_in_azide = any(n.id == edge.from_idx for n in azide_chain)
-            to_in_azide = any(n.id == edge.to_idx for n in azide_chain)
-            from_in_alkyne = any(n.id == edge.from_idx for n in alkyne_chain)
-            to_in_alkyne = any(n.id == edge.to_idx for n in alkyne_chain)
+            from_in_azide = any(n.index  == edge.from_idx for n in azide_chain)
+            to_in_azide = any(n.index  == edge.to_idx for n in azide_chain)
+            from_in_alkyne = any(n.index  == edge.from_idx for n in alkyne_chain)
+            to_in_alkyne = any(n.index  == edge.to_idx for n in alkyne_chain)
 
             if (from_in_azide and to_in_azide) or (from_in_alkyne and to_in_alkyne):
                 edges_to_remove.append(edge)
 
+                # If this is a bond to a hydrogen, mark the hydrogen for removal
+                for node_id in [edge.from_idx, edge.to_idx]:
+                    node = next((n for n in cyclic.nodes if n.index  == node_id), None)
+                    if node and node.element == 'H':
+                        atoms_to_remove.add(node)
+
+        # Remove tracked edges
         for edge in edges_to_remove:
             if edge in cyclic.edges:
                 cyclic.edges.remove(edge)
 
-        # Remove hydrogens from all atoms involved
-        for node in azide_chain + alkyne_chain:
+        # Remove hydrogens from reaction sites while tracking removals
+        atoms_to_clean = azide_chain + alkyne_chain
+        for atom in atoms_to_clean:
             edges_to_remove = []
-            nodes_to_remove = []
             for edge in cyclic.edges:
-                if edge.from_idx == node.id or edge.to_idx == node.id:
-                    other_id = edge.to_idx if edge.from_idx == node.id else edge.from_idx
-                    other_node = next((n for n in cyclic.nodes if n.id == other_id), None)
+                if edge.from_idx == atom.index  or edge.to_idx == atom.index :
+                    other_id = edge.to_idx if edge.from_idx == atom.index  else edge.from_idx
+                    other_node = next((n for n in cyclic.nodes if n.index  == other_id), None)
                     if other_node and other_node.element == 'H':
                         edges_to_remove.append(edge)
-                        nodes_to_remove.append(other_node)
+                        atoms_to_remove.add(other_node)
 
             for edge in edges_to_remove:
                 if edge in cyclic.edges:
                     cyclic.edges.remove(edge)
-            for node_to_remove in nodes_to_remove:
-                if node_to_remove in cyclic.nodes:
-                    cyclic.nodes.remove(node_to_remove)
 
-        # Create the triazole ring with correct alternating single/double bonds
-        # Pattern: N1-N2=N3-C4=C5-N1
+        # Remove all tracked atoms
+        for node in atoms_to_remove:
+            if node in cyclic.nodes:
+                cyclic.nodes.remove(node)
+
+        # Log intermediate state
+        intermediate_counts = count_atoms_by_element(cyclic)
+        self.logger.debug(f"Atom counts after cleanup: {intermediate_counts}")
+
+        # Create triazole ring with correct alternating single/double bonds
         new_edges = [
             GraphEdge(  # N1-N2
-                from_idx=azide_chain[0].id,
-                to_idx=azide_chain[1].id,
+                id=str(uuid4()),
+                from_idx=azide_chain[0].index,
+                to_idx=azide_chain[1].index,
                 bond_type='SINGLE',
-                is_aromatic=False,
+                is_aromatic=True,
                 is_conjugated=True,
                 in_ring=True,
                 stereo='NONE'
             ),
             GraphEdge(  # N2=N3
-                from_idx=azide_chain[1].id,
-                to_idx=azide_chain[2].id,
+                id=str(uuid4()),
+                from_idx=azide_chain[1].index,
+                to_idx=azide_chain[2].index,
                 bond_type='DOUBLE',
-                is_aromatic=False,
+                is_aromatic=True,
                 is_conjugated=True,
                 in_ring=True,
                 stereo='NONE'
             ),
             GraphEdge(  # N3-C4
-                from_idx=azide_chain[2].id,
-                to_idx=alkyne_chain[0].id,
+                id=str(uuid4()),
+                from_idx=azide_chain[2].index,
+                to_idx=alkyne_chain[0].index,
                 bond_type='SINGLE',
-                is_aromatic=False,
+                is_aromatic=True,
                 is_conjugated=True,
                 in_ring=True,
                 stereo='NONE'
             ),
             GraphEdge(  # C4=C5
-                from_idx=alkyne_chain[0].id,
-                to_idx=alkyne_chain[1].id,
+                id=str(uuid4()),
+                from_idx=alkyne_chain[0].index,
+                to_idx=alkyne_chain[1].index,
                 bond_type='DOUBLE',
-                is_aromatic=False,
+                is_aromatic=True,
                 is_conjugated=True,
                 in_ring=True,
                 stereo='NONE'
             ),
             GraphEdge(  # C5-N1
-                from_idx=alkyne_chain[1].id,
-                to_idx=azide_chain[0].id,
+                id=str(uuid4()),
+                from_idx=alkyne_chain[1].index,
+                to_idx=azide_chain[0].index,
                 bond_type='SINGLE',
-                is_aromatic=False,
+                is_aromatic=True,
                 is_conjugated=True,
                 in_ring=True,
                 stereo='NONE'
             )
         ]
 
-        # Add new bonds after verifying they don't already exist
+        # Add new bonds
         for new_edge in new_edges:
-            if not any(e.from_idx == new_edge.from_idx and e.to_idx == new_edge.to_idx for e in cyclic.edges):
-                cyclic.edges.append(new_edge)
+            cyclic.edges.append(new_edge)
 
-        # Update atomic properties
+        # Update properties for atoms in the triazole ring
         for node in cyclic.nodes:
             if node in azide_chain or node in alkyne_chain:
                 node.is_reactive_nuc = False
                 node.is_reactive_elec = False
-                node.implicit_h_count = 0
-                node.explicit_h_count = 0
+                node.is_reactive_click = False
+                node.num_implicit_hs = 0
+                node.num_explicit_hs = 0
                 node.formal_charge = 0
-                node.is_aromatic = False
-                node.is_conjugated = True  # Set conjugated to true for all ring atoms
+                node.is_aromatic = True
                 if node.element == 'N':
-                    node.valence = 3
+                    node.explicit_valence = 3
                 elif node.element == 'C':
-                    node.valence = 4
+                    node.explicit_valence = 4
 
-        # Reindex and clean up the graph
-        return self._reindex_graph(cyclic)
+        # Verify final atom count
+        final_graph = self._reindex_graph(cyclic)
+        final_counts = count_atoms_by_element(final_graph)
+        self.logger.debug(f"Final atom counts by element: {final_counts}")
+
+        # Validate atom conservation
+        if len(final_graph.nodes) != initial_atom_count - 2:  # We should lose 2 hydrogens in the click reaction
+            self.logger.error(f"Atom count mismatch! Initial: {initial_atom_count}, Final: {len(final_graph.nodes)}")
+            self.logger.error("Initial counts: " + str(initial_counts))
+            self.logger.error("Final counts: " + str(final_counts))
+            raise ValueError("Atom count mismatch in click reaction")
+
+        return final_graph
 
     def _get_azide_chain(self, graph: MolecularGraph, start_id: int) -> List[GraphNode]:
         """Get the complete azide chain starting from the first nitrogen."""
-        chain = [next(n for n in graph.nodes if n.id == start_id)]
+        chain = [next(n for n in graph.nodes if n.index  == start_id)]
         current_id = start_id
         visited = {current_id}
 
@@ -533,12 +619,12 @@ class PeptideBuilder:
             for edge in graph.edges:
                 if edge.from_idx == current_id or edge.to_idx == current_id:
                     other_id = edge.to_idx if edge.from_idx == current_id else edge.from_idx
-                    node = next((n for n in graph.nodes if n.id == other_id), None)
-                    if node and node.element == 'N' and node.id not in visited:
+                    node = next((n for n in graph.nodes if n.index  == other_id), None)
+                    if node and node.element == 'N' and node.index  not in visited:
                         next_n = node
                         chain.append(node)
-                        visited.add(node.id)
-                        current_id = node.id
+                        visited.add(node.index )
+                        current_id = node.index
                         break
             if not next_n:
                 break
@@ -547,13 +633,13 @@ class PeptideBuilder:
 
     def _get_alkyne_chain(self, graph: MolecularGraph, start_id: int) -> List[GraphNode]:
         """Get the complete alkyne chain starting from the first carbon."""
-        chain = [next(n for n in graph.nodes if n.id == start_id)]
+        chain = [next(n for n in graph.nodes if n.index  == start_id)]
 
         # Find the carbon connected by triple bond
         for edge in graph.edges:
             if edge.bond_type == 'TRIPLE' and (edge.from_idx == start_id or edge.to_idx == start_id):
                 other_id = edge.to_idx if edge.from_idx == start_id else edge.from_idx
-                other_node = next((n for n in graph.nodes if n.id == other_id), None)
+                other_node = next((n for n in graph.nodes if n.index  == other_id), None)
                 if other_node and other_node.element == 'C':
                     chain.append(other_node)
                     break
@@ -562,8 +648,8 @@ class PeptideBuilder:
 
     def _is_azide_nitrogen(self, node: GraphNode, graph: MolecularGraph) -> bool:
         """
-        Check if node is the first nitrogen of an azide group.
-        Verifies N-N≡N pattern with correct bond types and connectivity.
+        Check if node is part of an azide group.
+        Handles both N-N≡N and N=[N+]=[N-] representations.
         """
         if node.element != 'N':
             return False
@@ -571,55 +657,99 @@ class PeptideBuilder:
         # Get connected atoms and their bonds
         connected = []
         for edge in graph.edges:
-            if edge.from_idx == node.id:
-                atom = next(n for n in graph.nodes if n.id == edge.to_idx)
+            if edge.from_idx == node.index :
+                atom = next(n for n in graph.nodes if n.index  == edge.to_idx)
                 connected.append((atom, edge))
-            elif edge.to_idx == node.id:
-                atom = next(n for n in graph.nodes if n.id == edge.from_idx)
+            elif edge.to_idx == node.index :
+                atom = next(n for n in graph.nodes if n.index  == edge.from_idx)
                 connected.append((atom, edge))
 
-        # First N should have exactly two connections
-        if len(connected) != 2:
-            return False
+        # Check for ionic azide representation (N=[N+]=[N-])
+        def check_ionic_azide():
+            # First N should have one or two connections (one to next N, possibly one to carbon chain)
+            if not (1 <= len(connected) <= 2):
+                return False
 
-        # Find the second nitrogen (N2)
-        n2_pair = next(((atom, edge) for atom, edge in connected
-                        if atom.element == 'N' and edge.bond_type == 'SINGLE'), None)
-        if not n2_pair:
-            return False
+            # Find the second nitrogen (N2) connected by double bond
+            n2_pair = next(((atom, edge) for atom, edge in connected
+                           if atom.element == 'N' and edge.bond_type == 'DOUBLE'), None)
+            if not n2_pair:
+                return False
 
-        n2, n1_n2_bond = n2_pair
+            n2, n1_n2_bond = n2_pair
 
-        # Check N2 connections
-        n2_connected = []
-        for edge in graph.edges:
-            if edge.from_idx == n2.id:
-                atom = next(n for n in graph.nodes if n.id == edge.to_idx)
-                n2_connected.append((atom, edge))
-            elif edge.to_idx == n2.id:
-                atom = next(n for n in graph.nodes if n.id == edge.from_idx)
-                n2_connected.append((atom, edge))
+            # Check N2 connections
+            n2_connected = []
+            for edge in graph.edges:
+                if edge.from_idx == n2.index :
+                    atom = next(n for n in graph.nodes if n.index  == edge.to_idx)
+                    n2_connected.append((atom, edge))
+                elif edge.to_idx == n2.index :
+                    atom = next(n for n in graph.nodes if n.index  == edge.from_idx)
+                    n2_connected.append((atom, edge))
 
-        # N2 should have exactly two connections (N1 and N3)
-        if len(n2_connected) != 2:
-            return False
+            # N2 should have exactly two connections
+            if len(n2_connected) != 2:
+                return False
 
-        # Find N3 (should be connected to N2 with a triple bond)
-        n3_pair = next(((atom, edge) for atom, edge in n2_connected
-                        if atom.element == 'N' and atom.id != node.id
-                        and edge.bond_type == 'TRIPLE'), None)
-        if not n3_pair:
-            return False
+            # Find N3 (should be connected to N2 with a double bond)
+            n3_pair = next(((atom, edge) for atom, edge in n2_connected
+                           if atom.element == 'N' and atom.index  != node.index
+                           and edge.bond_type == 'DOUBLE'), None)
+            if not n3_pair:
+                return False
 
-        n3, n2_n3_bond = n3_pair
+            n3, n2_n3_bond = n3_pair
 
-        # Check N3 has only one connection (to N2)
-        n3_connections = sum(1 for edge in graph.edges
-                            if edge.from_idx == n3.id or edge.to_idx == n3.id)
-        if n3_connections != 1:
-            return False
+            # N3 should only have one connection (to N2)
+            n3_connections = sum(1 for edge in graph.edges
+                               if edge.from_idx == n3.index  or edge.to_idx == n3.index )
+            return n3_connections == 1
 
-        return True
+        # Check for covalent azide representation (N-N≡N)
+        def check_covalent_azide():
+            # First N should have exactly two connections
+            if len(connected) != 2:
+                return False
+
+            # Find the second nitrogen (N2)
+            n2_pair = next(((atom, edge) for atom, edge in connected
+                           if atom.element == 'N' and edge.bond_type == 'SINGLE'), None)
+            if not n2_pair:
+                return False
+
+            n2, n1_n2_bond = n2_pair
+
+            # Check N2 connections
+            n2_connected = []
+            for edge in graph.edges:
+                if edge.from_idx == n2.index :
+                    atom = next(n for n in graph.nodes if n.index  == edge.to_idx)
+                    n2_connected.append((atom, edge))
+                elif edge.to_idx == n2.index :
+                    atom = next(n for n in graph.nodes if n.index  == edge.from_idx)
+                    n2_connected.append((atom, edge))
+
+            # N2 should have exactly two connections
+            if len(n2_connected) != 2:
+                return False
+
+            # Find N3 (should be connected to N2 with a triple bond)
+            n3_pair = next(((atom, edge) for atom, edge in n2_connected
+                           if atom.element == 'N' and atom.index  != node.index
+                           and edge.bond_type == 'TRIPLE'), None)
+            if not n3_pair:
+                return False
+
+            n3, n2_n3_bond = n3_pair
+
+            # N3 should only have one connection (to N2)
+            n3_connections = sum(1 for edge in graph.edges
+                               if edge.from_idx == n3.index  or edge.to_idx == n3.index )
+            return n3_connections == 1
+
+        # Try both representations
+        return check_ionic_azide() or check_covalent_azide()
 
     def _is_alkyne_carbon(self, node: GraphNode, graph: MolecularGraph) -> bool:
         """
@@ -632,11 +762,11 @@ class PeptideBuilder:
         # Get all connections and their bond types
         connected = []
         for edge in graph.edges:
-            if edge.from_idx == node.id:
-                atom = next(n for n in graph.nodes if n.id == edge.to_idx)
+            if edge.from_idx == node.index :
+                atom = next(n for n in graph.nodes if n.index  == edge.to_idx)
                 connected.append((atom, edge))
-            elif edge.to_idx == node.id:
-                atom = next(n for n in graph.nodes if n.id == edge.from_idx)
+            elif edge.to_idx == node.index :
+                atom = next(n for n in graph.nodes if n.index  == edge.from_idx)
                 connected.append((atom, edge))
 
         # Find triple bond and connected carbon
@@ -652,11 +782,11 @@ class PeptideBuilder:
         other_c_connections = []
         for edge in graph.edges:
             if edge != triple_bond:
-                if edge.from_idx == other_c.id:
-                    atom = next(n for n in graph.nodes if n.id == edge.to_idx)
+                if edge.from_idx == other_c.index :
+                    atom = next(n for n in graph.nodes if n.index  == edge.to_idx)
                     other_c_connections.append((atom, edge))
-                elif edge.to_idx == other_c.id:
-                    atom = next(n for n in graph.nodes if n.id == edge.from_idx)
+                elif edge.to_idx == other_c.index :
+                    atom = next(n for n in graph.nodes if n.index  == edge.from_idx)
                     other_c_connections.append((atom, edge))
 
         # At least one carbon must be terminal (only one other connection)
@@ -687,18 +817,18 @@ class PeptideBuilder:
         connected = []
         for edge in graph.edges:
             if edge.from_idx == node_id:
-                connected.append(next(n for n in graph.nodes if n.id == edge.to_idx))
+                connected.append(next(n for n in graph.nodes if n.index  == edge.to_idx))
             elif edge.to_idx == node_id:
-                connected.append(next(n for n in graph.nodes if n.id == edge.from_idx))
+                connected.append(next(n for n in graph.nodes if n.index  == edge.from_idx))
         return connected
 
     def _get_azide_nitrogens(self, graph: MolecularGraph, start_nitrogen_id: int) -> List[GraphNode]:
         """Get all nitrogen atoms in an azide group starting from the first nitrogen."""
-        nitrogens = [next(n for n in graph.nodes if n.id == start_nitrogen_id)]
+        nitrogens = [next(n for n in graph.nodes if n.index  == start_nitrogen_id)]
         current = nitrogens[0]
 
         while True:
-            connected = self._get_connected_atoms(current.id, graph)
+            connected = self._get_connected_atoms(current.index , graph)
             next_n = next((n for n in connected if n.element == 'N' and n not in nitrogens), None)
             if not next_n:
                 break
@@ -725,12 +855,12 @@ class PeptideBuilder:
             raise ValueError("Cannot find terminal reactive sites for cyclization")
 
         cyclic = copy.deepcopy(linear_peptide)
-        cyclic = self._remove_h_from_nh(cyclic, nuc_site.id)
-        cyclic = self._remove_oh_from_cooh(cyclic, elec_site.id)
-
+        cyclic = self._remove_h_from_nh(cyclic, nuc_site.index )
+        cyclic = self._remove_oh_from_cooh(cyclic, elec_site.index )
         cyclic.edges.append(GraphEdge(
-            from_idx=nuc_site.id,
-            to_idx=elec_site.id,
+            id=str(uuid4),
+            from_idx=nuc_site.index ,
+            to_idx=elec_site.index ,
             bond_type='SINGLE',
             is_aromatic=False,
             is_conjugated=False,
@@ -739,9 +869,9 @@ class PeptideBuilder:
         ))
 
         for node in cyclic.nodes:
-            if node.id == nuc_site.id:
+            if node.index  == nuc_site.index :
                 node.is_reactive_nuc = False
-            if node.id == elec_site.id:
+            if node.index  == elec_site.index :
                 node.is_reactive_elec = False
 
         return self._reindex_graph(cyclic)
@@ -752,17 +882,16 @@ class PeptideBuilder:
         old_to_new = {}
 
         # Reindex nodes
-        for i, node in enumerate(sorted(graph.nodes, key=lambda x: x.id)):
+        for i, node in enumerate(sorted(graph.nodes, key=lambda x: x.index )):
             new_node = copy.deepcopy(node)
-            new_node.id = i
-            old_to_new[node.id] = i
+            old_to_new[node.index] = i
             new_graph.nodes.append(new_node)
-
+        print(":) 5")
         # Update edges
         for edge in graph.edges:
             new_edge = copy.deepcopy(edge)
             new_edge.from_idx = old_to_new[edge.from_idx]
             new_edge.to_idx = old_to_new[edge.to_idx]
             new_graph.edges.append(new_edge)
-
+        print(":) 6")
         return new_graph

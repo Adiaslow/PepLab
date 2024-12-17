@@ -5,6 +5,7 @@ from typing import Dict, List, Optional
 class PeptideInfo:
     """Information about a generated peptide."""
     graph: Dict
+    id: str
     sequence: List[str]
     peptide_type: str
     smiles: Optional[str] = None
