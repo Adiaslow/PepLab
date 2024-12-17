@@ -24,11 +24,11 @@ Library generation in PepLab involves creating a diverse set of molecules that c
    - Combine building blocks in all possible ways to generate a diverse set of molecules.
 
 3. **Filter and Optimize:**
-   - Apply filters to remove undesirable compounds (e.g., toxic, unstable).
-   - Optimize the library for specific properties (e.g., drug-likeness, diversity).
+   - Apply filters
+   - Optimize the library for specific properties (e.g., permeability, activity, mass differentiation).
 
 4. **Output Library:**
-   - Store the generated library in a suitable format (e.g., SMILES, SDF).
+   - Store the generated library in a suitable format (e.g. CSV, JSON, PDB, SDF, SMILES).
 
 ### Molecular Graph Modeling
 
