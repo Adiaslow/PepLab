@@ -1,3 +1,5 @@
+# peplab/core/graph/molecule_graph.py
+
 import logging
 from typing import List, Tuple, Dict
 from uuid import uuid4

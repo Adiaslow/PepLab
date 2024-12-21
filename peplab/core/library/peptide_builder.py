@@ -1,4 +1,4 @@
-# @title Peptide Builder
+# peplab/core/library/peptide_builder.py
 
 import logging
 from itertools import product

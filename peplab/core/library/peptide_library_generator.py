@@ -1,3 +1,5 @@
+# peplab/core/library/peptide_library_generator.py
+
 import pandas as pd
 from pathlib import Path
 import logging
