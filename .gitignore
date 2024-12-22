@@ -163,3 +163,17 @@ cython_debug/
 
 # Mac
 **/.DS_Store
+
+# Mermaid files
+*.mmd
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+
+# Build artifacts
+build/
+dist/
+reports/
+logs/
