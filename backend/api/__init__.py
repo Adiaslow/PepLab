@@ -1,6 +1,6 @@
-from .property.thermodynamics import ThermodynamicParameters
-from .property.reactivity_profile import ReactivityProfile
-from .peptide.peptide_analyzer import PeptideAnalyzer
+from ...analysis.property.thermodynamics import ThermodynamicParameters
+from ...analysis.property.reactivity_profile import ReactivityProfile
+from ..core.peptide_analyzer import PeptideAnalyzer
 from .structure.structure_generator import StructureGenerator
 
 __all__ = [
