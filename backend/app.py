@@ -68,7 +68,6 @@ def generate_composition():
 
         return "\n".join([f"{pair[0]} {pair[1]}" for pair in formatted_result])
 
-
     except Exception as e:
         # Log and return the error
         app.logger.error(f"Error generating composition: {str(e)}")
