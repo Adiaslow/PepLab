@@ -1,4 +1,4 @@
-# peplab/frontend/src/application/states/ready_state.py
+# peplab/frontend/src/infrastructure/states/ready_state.py
 """
 This module is responsible for handling the ready state of the application.
 
@@ -7,7 +7,7 @@ Classes:
 """
 
 # Internal imports
-from ..interfaces.state import State
+from peplab.frontend.src.infrastructure.interfaces import State
 
 
 class ReadyState(State):

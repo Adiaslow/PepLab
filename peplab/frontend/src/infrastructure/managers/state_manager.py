@@ -1,4 +1,4 @@
-# peplab/frontend/src/application/state_manager.py
+# peplab/frontend/src/infrastructure/managers/state_manager.py
 """
 This module is responsible for managing the state of the application.
 It is responsible for setting the state of the application and handling the state.
@@ -8,7 +8,7 @@ Classes:
 """
 
 # Internal imports
-from .interfaces.state import State
+from peplab.frontend.src.infrastructure.interfaces import State
 
 
 class StateManager:
@@ -26,7 +26,7 @@ class StateManager:
         state: Get the current state of the application.
         state_history: Get the history of the states.
         handle: Handle the current state.
-        _validate_state: Validate the state.
+        __validate_state: Validate the state.
     """
 
     def __init__(self, state: State | None = None) -> None:
