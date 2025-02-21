@@ -7,12 +7,14 @@ Classes:
     DesignState: The design state of the application.
 """
 
-# External imports
+# Standard Library Imports
 from enum import Enum
+from typing import List
 
-# Internal imports
+# Internal Imports
 from ..interfaces.state import State
 from core.types.design_types import DesignType
+from infrastructure.managers.state_manager import StateManager
 
 
 class DesignState(State):
@@ -28,17 +30,31 @@ class DesignState(State):
         This method is responsible for initializing the design state.
         """
         super().__init__()
+        self.substates: List[DesignType] = [substate for substate in DesignType]
 
     def handle(self) -> None:
         """Handle the design state.
 
         This method is responsible for handling the design state.
         """
-        ...
+        match self.substate:
+            case DesignType.COMBINATORIC:
+                # Initialize combinatoric backend scripts
+                ...
+            case DesignType.GENERATIVE:
+                # Initialize generative backend scripts
+                ...
+            case DesignType.GENETIC:
+                # Initialize genetic backend scripts
+                ...
+            case DesignType.MCMC:
+                # Initialize MCMC backend scripts
+                ...
+            case DesignType.RANDOM:
+                # Initialize random backend scripts
+                ...
+            case _:
+                raise ValueError(f"Invalid design type: {self.substate}")
 
-    def __validate_design_type(self, design_type: DesignType) -> bool:
-        """Validate the design type.
 
-        This method is responsible for validating the design type.
-        """
-        return design_type in DesignType
+state_manager = StateManager(DesignState())

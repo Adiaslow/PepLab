@@ -29,6 +29,18 @@ class StateManager:
         __validate_state: Validate the state.
     """
 
+    _instance = None
+
+    def __new__(cls, *args, **kwargs) -> "StateManager":
+        """Create a new instance of the StateManager.
+
+        Returns:
+            The new instance of the StateManager.
+        """
+        if not cls._instance:
+            cls._instance = super(StateManager, cls).__new__(cls, *args, **kwargs)
+        return cls._instance
+
     def __init__(self, state: State | None = None) -> None:
         """Initialize the StateManager.
 
@@ -82,6 +94,24 @@ class StateManager:
             The current state of the application.
         """
         return self.__state
+
+    @property
+    def current_state(self) -> State | None:
+        """Get the current state of the application.
+
+        Returns:
+            The current state of the application.
+        """
+        return self.__state
+
+    @property
+    def previous_state(self) -> State | None:
+        """Get the previous state of the application.
+
+        Returns:
+            The previous state of the application.
+        """
+        return self.__state_history[-1]
 
     @property
     def state_history(self) -> list[State]:
