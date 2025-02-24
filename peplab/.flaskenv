@@ -1,0 +1,5 @@
+FLASK_APP=peplab.app
+FLASK_ENV=development
+FLASK_DEBUG=1
+HOST=0.0.0.0
+PORT=5001 

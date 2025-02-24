@@ -6,14 +6,17 @@ Classes:
     Config: The configuration for the application.
 """
 
-# Standard Library Imports
-from typing import Any
-
-# External Imports
-
 
 class Config:
-    """The configuration for the application."""
+    """The configuration for the application.
+
+    Attributes:
+        None
+
+    Methods:
+        __init__: Initialize the configuration.
+        __repr__: Represent the configuration.
+    """
 
     def __init__(self) -> None:
         """Initialize the configuration."""

@@ -8,6 +8,7 @@ Classes:
 
 # External imports
 from enum import Enum
+from typing import List
 
 
 class DesignType(Enum):
@@ -17,4 +18,12 @@ class DesignType(Enum):
     GENERATIVE = "generative"
     GENETIC = "genetic"
     MCMC = "mcmc"
+    FRACTAL = "fractal"
     RANDOM = "random"
+
+    @classmethod
+    def get_all_design_types(cls) -> List[str]:
+        """
+        This method returns all the design types.
+        """
+        return [design_type.value for design_type in cls]

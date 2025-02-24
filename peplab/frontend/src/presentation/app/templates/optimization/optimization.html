@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% from "components/page_header.html" import page_header %}
+
+{% block title %}Optimization{% endblock %}
+
+{% block page_content %}
+<div class="page-content">
+    {{ page_header("Optimization") }}
+    
+    <div class="options-grid">
+        <!-- Optimization options as cards -->
+        <a href="{{ url_for('optimization.handle_optimization', optimization_type='genetic') }}" class="option-card">
+            <div class="option-card-icon">
+                <i class="fas fa-dna"></i>
+            </div>
+            <h2 class="option-card-title">{{ display_names['genetic'] }}</h2>
+            <p class="option-card-description">{{ method_descriptions['genetic'] }}</p>
+        </a>
+        <!-- More optimization options... -->
+    </div>
+</div>
+{% endblock %} 

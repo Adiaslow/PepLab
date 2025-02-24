@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% from "components/page_header.html" import page_header %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/design.css') }}">
+{% endblock %}
+
+{% block title %}Design{% endblock %}
+
+{% block page_content %}
+<div class="page-content">
+    {{ page_header("Design") }}
+    
+    <div class="options-grid">
+        <!-- Design options as cards -->
+        <div class="option-card" onclick="handleDesignMethod('combinatoric')">
+            <div class="option-card-icon">
+                <i class="fas fa-cubes"></i>
+            </div>
+            <h2 class="option-card-title">{{ display_names['combinatoric'] }}</h2>
+            <p class="option-card-description">{{ method_descriptions['combinatoric'] }}</p>
+        </div>
+
+        <!-- Generative Design -->
+        <div class="option-card" onclick="handleDesignMethod('generative')">
+            <div class="option-card-icon">
+                <i class="fas fa-brain"></i>
+            </div>
+            <h2 class="option-card-title">{{ display_names['generative'] }}</h2>
+            <p class="option-card-description">{{ method_descriptions['generative'] }}</p>
+        </div>
+
+        <!-- Genetic Algorithm -->
+        <div class="option-card" onclick="handleDesignMethod('genetic')">
+            <div class="option-card-icon">
+                <i class="fas fa-dna"></i>
+            </div>
+            <h2 class="option-card-title">{{ display_names['genetic'] }}</h2>
+            <p class="option-card-description">{{ method_descriptions['genetic'] }}</p>
+        </div>
+
+        <!-- MCMC Design -->
+        <div class="option-card" onclick="handleDesignMethod('mcmc')">
+            <div class="option-card-icon">
+                <i class="fas fa-random"></i>
+            </div>
+            <h2 class="option-card-title">{{ display_names['mcmc'] }}</h2>
+            <p class="option-card-description">{{ method_descriptions['mcmc'] }}</p>
+        </div>
+
+        <!-- Fractal Design -->
+        <div class="option-card" onclick="handleDesignMethod('fractal')">
+            <div class="option-card-icon">
+                <i class="fas fa-snowflake"></i>
+            </div>
+            <h2 class="option-card-title">{{ display_names['fractal'] }}</h2>
+            <p class="option-card-description">{{ method_descriptions['fractal'] }}</p>
+        </div>
+
+        <!-- Random Design -->
+        <div class="option-card" onclick="handleDesignMethod('random')">
+            <div class="option-card-icon">
+                <i class="fas fa-dice"></i>
+            </div>
+            <h2 class="option-card-title">{{ display_names['random'] }}</h2>
+            <p class="option-card-description">{{ method_descriptions['random'] }}</p>
+        </div>
+    </div>
+
+    <h1 class="section-title mt-3">Building Blocks</h1>
+    <div class="options-grid">
+        <!-- Load Building Blocks -->
+        <div class="option-card" onclick="document.getElementById('blocks-file').click()">
+            <div class="option-card-icon">
+                <i class="fas fa-file-upload"></i>
+            </div>
+            <h2 class="option-card-title">Load Building Blocks</h2>
+            <p class="option-card-description">Import building blocks from a CSV, TSV, or XLSX file.</p>
+            <input type="file" id="blocks-file" name="blocks" accept=".csv,.xlsx,.tsv" class="file-input" 
+                   onchange="handleBlocksUpload(this)" style="display: none;">
+        </div>
+
+        <!-- Explore Building Blocks -->
+        <a href="{{ url_for('blocks.explore') }}" class="option-card">
+            <div class="option-card-icon">
+                <i class="fas fa-search"></i>
+            </div>
+            <h2 class="option-card-title">Explore Building Blocks</h2>
+            <p class="option-card-description">Browse databases of building blocks or explore your loaded library.</p>
+        </a>
+
+        <!-- Save Building Blocks -->
+        <a href="{{ url_for('design.save_blocks') }}" class="option-card">
+            <div class="option-card-icon">
+                <i class="fas fa-file-download"></i>
+            </div>
+            <h2 class="option-card-title">Save Building Blocks</h2>
+            <p class="option-card-description">Export your building blocks library to a file.</p>
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function handleDesignMethod(method) {
+    console.log('Selected design method:', method);
+    // TODO: Implement backend call when ready
+}
+
+function handleBlocksUpload(input) {
+    if (input.files.length > 0) {
+        const formData = new FormData();
+        formData.append('blocks', input.files[0]);
+        
+        fetch('{{ url_for("design.upload_blocks") }}', {
+            method: 'POST',
+            body: formData
+        }).then(response => {
+            window.location.reload();
+        }).catch(error => {
+            console.error('Upload failed:', error);
+        });
+    }
+}
+</script>
+{% endblock %} 

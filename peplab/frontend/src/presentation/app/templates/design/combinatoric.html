@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Combinatoric Design{% endblock %}
+
+{% block page_content %}
+<div class="page-content">
+    <div class="page-header">
+        <button class="back-button" onclick="history.back()">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <h1 class="page-title">Combinatoric Design</h1>
+    </div>
+    
+    <div class="method-description">
+        Select a combinatorial method to generate peptide sequences.
+    </div>
+
+    <div class="options-grid">
+        <!-- Combination -->
+        <div class="option-card" onclick="handleCombinatoric('combination')">
+            <div class="option-card-icon">
+                <i class="fas fa-project-diagram"></i>
+            </div>
+            <h2 class="option-card-title">Combination</h2>
+            <p class="option-card-description">Generate all possible combinations of building blocks without regard to order.</p>
+        </div>
+
+        <!-- Permutation -->
+        <div class="option-card" onclick="handleCombinatoric('permutation')">
+            <div class="option-card-icon">
+                <i class="fas fa-random"></i>
+            </div>
+            <h2 class="option-card-title">Permutation</h2>
+            <p class="option-card-description">Generate all possible arrangements of building blocks where order matters.</p>
+        </div>
+
+        <!-- Cartesian Product -->
+        <div class="option-card" onclick="handleCombinatoric('cartesian')">
+            <div class="option-card-icon">
+                <i class="fas fa-th"></i>
+            </div>
+            <h2 class="option-card-title">Cartesian Product</h2>
+            <p class="option-card-description">Generate all possible combinations by taking one element from each set of building blocks.</p>
+        </div>
+
+        <!-- n-ary Cartesian Product -->
+        <div class="option-card" onclick="handleCombinatoric('nary')">
+            <div class="option-card-icon">
+                <i class="fas fa-cube"></i>
+            </div>
+            <h2 class="option-card-title">n-ary Cartesian Product</h2>
+            <p class="option-card-description">Generate the Cartesian product of a single set with itself n times.</p>
+        </div>
+
+        <!-- Cyclic Permutation -->
+        <div class="option-card" onclick="handleCombinatoric('cyclic')">
+            <div class="option-card-icon">
+                <i class="fas fa-sync"></i>
+            </div>
+            <h2 class="option-card-title">Cyclic Permutation</h2>
+            <p class="option-card-description">Generate all possible circular arrangements of building blocks.</p>
+        </div>
+
+        <!-- Dihedral Permutation -->
+        <div class="option-card" onclick="handleCombinatoric('dihedral')">
+            <div class="option-card-icon">
+                <i class="fas fa-dharmachakra"></i>
+            </div>
+            <h2 class="option-card-title">Dihedral Permutation</h2>
+            <p class="option-card-description">Generate all possible rotations and reflections of building blocks.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/design.js') }}"></script>
+{% endblock %} 

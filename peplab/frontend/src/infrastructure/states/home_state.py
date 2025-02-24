@@ -1,6 +1,6 @@
 # peplab/frontend/src/application/states/home_state.py
 """
-This module is responsible for handling the home state of the application.
+This module is responsible for handling the home state or splash screen of the application.
 
 Classes:
     HomeState: The home state of the application.
@@ -8,25 +8,36 @@ Classes:
 
 # Internal imports
 from ..interfaces.state import State
+from typing import Optional, Literal
 
 
-class HomeState(State):
-    """The home state of the application.
+HomeSubstate = Literal["main", "about", "contact"]
 
-    Methods:
-        handle: Handle the home state.
+
+class HomeState(State[HomeSubstate]):
+    """
+    Represents the home/splash screen state of the application.
     """
 
     def __init__(self) -> None:
-        """Initialize the home state.
-
-        This method is responsible for initializing the home state.
-        """
+        """Initialize the home state."""
         super().__init__()
+        self.substate: HomeSubstate = "main"
+
+    def is_valid_substate(self, value: HomeSubstate) -> bool:
+        """Validate home substate."""
+        return value in ["main", "about", "contact"]
 
     def handle(self) -> None:
-        """Handle the home state.
+        """Handle any home state specific logic."""
+        pass
 
-        This method is responsible for handling the home state.
-        """
-        ...
+    def get_route(self) -> str:
+        """Get the current route based on state and substate."""
+        if self.substate and self.substate != "main":
+            return f"/{self.substate}"
+        return "/"
+
+    def __str__(self) -> str:
+        """Return string representation of the state."""
+        return f"Home State: {self.substate}"

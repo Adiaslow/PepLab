@@ -17,7 +17,6 @@ from peplab.frontend.src.infrastructure.states.home_state import HomeState
 from peplab.frontend.src.infrastructure.states.initialization_state import (
     InitializationState,
 )
-from peplab.frontend.src.infrastructure.states.ready_state import ReadyState
 
 __all__: List[Any] = [
     "AnalysisState",
@@ -25,5 +24,4 @@ __all__: List[Any] = [
     "DesignState",
     "HomeState",
     "InitializationState",
-    "ReadyState",
 ]

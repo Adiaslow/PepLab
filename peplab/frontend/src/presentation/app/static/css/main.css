@@ -1,5 +1,856 @@
-/* peplab/frontend/src/presentation/styles/main.css */
+/* frontend/src/presentation/app/static/css/main.css */
 /*
 This file contains the main styles for the frontend application.
 */
 
+/* Base Variables */
+:root {
+    /* Colors */
+    --primary-color: #007bff;
+    --secondary-color: #6c757d;
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --info-color: #17a2b8;
+    
+    /* Light Theme (default) */
+    --bg-color: #ffffff;
+    --text-color: #333333;
+    --border-color: #e0e0e0;
+    --card-bg: #ffffff;
+    
+    /* Spacing */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    
+    /* Typography */
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.25rem;
+    --font-size-xl: 1.5rem;
+}
+
+/* Dark Theme */
+[data-theme="dark"] {
+    --bg-color: #1a1a1a;
+    --text-color: #ffffff;
+    --border-color: #404040;
+    --card-bg: #2d2d2d;
+}
+
+/* Reset & Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Cartograph CF', 'Arial', sans-serif;
+    color: var(--text-color);
+    position: relative;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    background: transparent;
+}
+
+/* Layout */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 var(--spacing-md);
+}
+
+/* Cards */
+.card {
+    background: var(--card-bg);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Forms */
+.form-group {
+    margin-bottom: var(--spacing-md);
+}
+
+label {
+    display: block;
+    margin-bottom: var(--spacing-xs);
+    font-weight: 500;
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: var(--spacing-sm);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-color);
+    color: var(--text-color);
+}
+
+button {
+    background: var(--primary-color);
+    color: white;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+button:hover {
+    opacity: 0.9;
+}
+
+/* Settings Page */
+.theme-options,
+.accent-colors {
+    margin-bottom: var(--spacing-lg);
+}
+
+/* Dashboard */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    :root {
+        --spacing-md: 0.75rem;
+        --spacing-lg: 1rem;
+    }
+    
+    .container {
+        padding: 0 var(--spacing-sm); 
+    }
+}
+
+/* Utility Classes */
+.text-center { text-align: center; }
+.mt-1 { margin-top: var(--spacing-sm); }
+.mt-2 { margin-top: var(--spacing-md); }
+.mt-3 { margin-top: var(--spacing-lg); }
+.mb-1 { margin-bottom: var(--spacing-sm); }
+.mb-2 { margin-bottom: var(--spacing-md); }
+.mb-3 { margin-bottom: var(--spacing-lg); }
+
+/* Base styles */
+html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+body {
+    font-family: 'Cartograph CF', 'Arial', sans-serif;
+    background: transparent;
+    color: var(--text-color);
+    position: relative;
+    min-height: 100vh;
+}
+
+/* Ensure all main content is above the canvas */
+.main-nav,
+.content,
+.page-content,
+footer {
+    position: relative;
+    z-index: 1;
+    background-color: var(--background-color);
+}
+
+/* Navigation */
+.main-nav {
+    position: relative;
+    z-index: 2;
+    background: rgba(245, 246, 250, 0.85);
+    backdrop-filter: blur(10px);
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 
+        /* Subtle inner shadow */
+        inset 0 2px 4px rgba(0, 0, 0, 0.1),
+        /* Subtle outer glow */
+        0 -1px 2px rgba(255, 255, 255, 0.1);
+}
+
+.nav-brand {
+    display: flex;
+    align-items: center;
+}
+
+.logo {
+    text-decoration: none;
+}
+
+.logo-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 120px;
+    height: 40px;
+}
+
+.logo-icon {
+    height: 300%;
+    width: auto;
+    opacity: 0.2;
+    filter: none;
+}
+
+.logo-text {
+    position: absolute;
+    color: var(--text-color);
+    font-family: 'Cartograph CF', sans-serif;
+    font-size: 2rem;
+    font-weight: 300;
+    letter-spacing: 0.05em;
+    text-align: center;
+    width: 100%;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    /* text-shadow: 2px 2px 4px var(--shadow-dark); */
+    pointer-events: none;
+}
+
+.nav-links {
+    list-style: none;
+    display: flex;
+    gap: 2rem;
+    margin: 0;
+    padding: 0;
+}
+
+.nav-links a {
+    color: var(--text-color);
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 8px;
+    transition: color 0.3s ease;
+    text-decoration: none;
+}
+
+.nav-links a:hover {
+    color: var(--primary-color);
+    background: none;
+    box-shadow: none;
+}
+
+.nav-settings {
+    margin-right: 1rem;
+}
+
+.settings-icon {
+    color: var(--text-color);
+    font-size: 1.2rem;
+    transition: transform 0.3s ease;
+}
+
+.settings-icon:hover {
+    transform: rotate(45deg);
+}
+
+/* Hide settings icon on home page */
+.home-page .nav-settings {
+    display: none;
+}
+
+.nav-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* Content */
+.content {
+    position: relative;
+    z-index: 2;
+    background: rgba(245, 246, 250, 0.9);
+    margin: 2rem auto;
+    padding: 2rem;
+    max-width: 1200px;
+    border-radius: 20px;
+    backdrop-filter: blur(8px);
+    box-shadow: 
+        /* Deep inner shadow for cut-out effect */
+        inset 0 6px 12px rgba(0, 0, 0, 0.2),
+        inset 0 -3px 6px rgba(0, 0, 0, 0.1),
+        /* Subtle outer glow */
+        0 -1px 2px rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+}
+
+/* Add depth to the content cut-out */
+.content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 20px;
+    pointer-events: none;
+    box-shadow: 
+        /* Bright top edge */
+        inset 0 1px 1px rgba(255, 255, 255, 0.2),
+        /* Dark bottom edge */
+        inset 0 -1px 1px rgba(0, 0, 0, 0.1);
+}
+
+/* Universal Grid Styles */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+/* Universal Button Styles */
+.button {
+    background: var(--surface-color);
+    color: var(--text-color);
+    border: none;
+    border-radius: 12px;
+    box-shadow: var(--shadow-raised);
+    padding: 0.8rem 1.6rem;
+    transition: all 0.3s ease;
+    text-align: center;
+    min-width: 140px;
+    cursor: pointer;
+    font-family: 'Cartograph CF', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.button:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-raised);
+}
+
+.button:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-pressed);
+}
+
+/* Primary and secondary buttons now use same color but different shadows */
+.button.primary {
+    background: var(--surface-color);
+    color: var(--text-color);
+    box-shadow: var(--shadow-raised);
+}
+
+.button.primary:hover {
+    transform: translateY(-2px);
+}
+
+.button.primary:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-pressed);
+}
+
+.button.secondary {
+    background: var(--surface-color);
+    color: var(--text-color);
+    box-shadow: var(--shadow-raised);
+}
+
+/* Flash Messages */
+.flash-messages {
+    margin-bottom: 2rem;
+}
+
+.flash-message {
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+    box-shadow: 
+        inset 0 2px 4px rgba(0, 0, 0, 0.1),
+        inset 0 -1px 2px rgba(0, 0, 0, 0.05),
+        0 -1px 2px rgba(255, 255, 255, 0.1);
+    background: rgba(245, 246, 250, 0.7);
+    backdrop-filter: blur(5px);
+}
+
+.flash-message.error {
+    background: var(--surface-color);
+    color: #e74c3c;
+    box-shadow: var(--shadow-raised);
+    border: none;
+}
+
+.flash-message.success {
+    background: var(--surface-color);
+    color: #2ecc71;
+    box-shadow: var(--shadow-raised);
+    border: none;
+}
+
+/* Splash Screen */
+.splash-container {
+    height: 80vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background: var(--background-color);
+}
+
+.splash-content {
+    padding: 2rem;
+    border-radius: 12px;
+    background: var(--surface-color);
+    box-shadow: var(--shadow-raised);
+    max-width: 600px;
+    width: 90%;
+}
+
+.splash-content h1 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+}
+
+.tagline {
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+}
+
+.splash-button {
+    display: inline-block;
+    padding: 1rem 2rem;
+    font-size: 1.2rem;
+    background: var(--primary-color);
+    color: var(--surface-color);
+    text-decoration: none;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.splash-button:hover {
+    background: var(--hover-color);
+    color: var(--text-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Hide navigation on splash screen */
+.home-page .main-nav {
+    display: none;
+}
+
+/* Dashboard */
+.dashboard-container {
+    padding: 2rem;
+}
+
+.dashboard-container h1 {
+    margin-bottom: 2rem;
+    color: var(--primary-color);
+}
+
+.activity-list {
+    min-height: 200px;
+}
+
+.empty-state {
+    color: var(--text-secondary);
+    text-align: center;
+    padding: 2rem;
+    font-style: italic;
+}
+
+/* Upload Section */
+.upload-section {
+    background: var(--surface-color);
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px var(--shadow-color);
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.upload-section h2 {
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+}
+
+.upload-form {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    align-items: center;
+}
+
+.file-input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.file-input {
+    display: none;
+}
+
+.file-label {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    cursor: pointer;
+}
+
+.file-text {
+    min-width: 200px;
+    padding: 0.5rem;
+    background: var(--surface-color);
+    color: var(--text-color);
+    border: none;
+    box-shadow: var(--shadow-pressed);
+    border-radius: 4px;
+}
+
+/* Update input styles */
+input[type="text"],
+input[type="number"],
+select,
+textarea {
+    background: var(--surface-color);
+    color: var(--text-color);
+    border: none;
+    box-shadow: var(--shadow-pressed);
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+select:focus,
+textarea:focus {
+    box-shadow: var(--shadow-pressed);
+    outline: none;
+}
+
+/* Update settings toggles */
+input[type="checkbox"] {
+    appearance: none;
+    width: 44px;
+    height: 24px;
+    background: var(--text-secondary);
+    border-radius: 12px;
+    position: relative;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    box-shadow: var(--shadow-pressed);
+}
+
+input[type="checkbox"]:checked {
+    background: var(--primary-color);
+}
+
+input[type="checkbox"]::before {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    top: 3px;
+    left: 3px;
+    background: var(--surface-color);
+    transition: transform 0.3s;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+input[type="checkbox"]:checked::before {
+    transform: translateX(20px);
+}
+
+input[type="checkbox"]:hover::before {
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+footer {
+    position: relative;
+    z-index: 2;
+    background: rgba(245, 246, 250, 0.85);
+    padding: 1rem 2rem;  /* Add horizontal padding */
+    text-align: center;
+}
+
+/* Coming Soon Page */
+.coming-soon-container {
+    height: 70vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.coming-soon-content {
+    padding: 3rem;
+    border-radius: 12px;
+    background: var(--surface-color);
+    box-shadow: var(--shadow-raised);
+    max-width: 600px;
+    width: 90%;
+}
+
+.coming-soon-content h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+}
+
+.coming-soon-content p {
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+}
+
+.page-content {
+    background: transparent;
+    position: relative;
+    z-index: 2;
+}
+
+.page-header {
+    margin-bottom: 2rem;
+}
+
+.page-back-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-family: 'Cartograph CF', sans-serif;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    transition: transform 0.2s;
+    text-decoration: none;
+}
+
+.page-back-button:hover {
+    color: var(--primary-color);
+    transform: translateX(-3px);
+    background: none;
+    box-shadow: none;
+}
+
+.page-back-button:active {
+    box-shadow: var(--shadow-pressed);
+}
+
+.page-back-button i {
+    font-size: 1.2rem;
+}
+
+.page-back-button span {
+    font-weight: 500;
+}
+
+/* Font Definitions */
+@font-face {
+    font-family: 'Cartograph CF';
+    src: url('../fonts/CartographCF-Thin.otf') format('opentype');
+    font-weight: 100;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Cartograph CF';
+    src: url('../fonts/CartographCF-ThinItalic.otf') format('opentype');
+    font-weight: 100;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Cartograph CF';
+    src: url('../fonts/CartographCF-ExtraLight.otf') format('opentype');
+    font-weight: 200;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Cartograph CF';
+    src: url('../fonts/CartographCF-ExtraLightItalic.otf') format('opentype');
+    font-weight: 200;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Cartograph CF';
+    src: url('../fonts/CartographCF-Light.otf') format('opentype');
+    font-weight: 300;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Cartograph CF';
+    src: url('../fonts/CartographCF-LightItalic.otf') format('opentype');
+    font-weight: 300;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Cartograph CF';
+    src: url('../fonts/CartographCF-Regular.otf') format('opentype');
+    font-weight: 400;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Cartograph CF';
+    src: url('../fonts/CartographCF-RegularItalic.otf') format('opentype');
+    font-weight: 400;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Cartograph CF';
+    src: url('../fonts/CartographCF-DemiBold.otf') format('opentype');
+    font-weight: 600;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Cartograph CF';
+    src: url('../fonts/CartographCF-DemiBoldItalic.otf') format('opentype');
+    font-weight: 600;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Cartograph CF';
+    src: url('../fonts/CartographCF-Bold.otf') format('opentype');
+    font-weight: 700;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Cartograph CF';
+    src: url('../fonts/CartographCF-BoldItalic.otf') format('opentype');
+    font-weight: 700;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Cartograph CF';
+    src: url('../fonts/CartographCF-ExtraBold.otf') format('opentype');
+    font-weight: 800;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Cartograph CF';
+    src: url('../fonts/CartographCF-ExtraBoldItalic.otf') format('opentype');
+    font-weight: 800;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Cartograph CF';
+    src: url('../fonts/CartographCF-Heavy.otf') format('opentype');
+    font-weight: 900;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Cartograph CF';
+    src: url('../fonts/CartographCF-HeavyItalic.otf') format('opentype');
+    font-weight: 900;
+    font-style: italic;
+}
+
+/* Add styles for cut-out sections */
+.cut-out-section {
+    position: relative;
+    background: rgba(245, 246, 250, 0.6);
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    backdrop-filter: blur(5px);
+    box-shadow: 
+        /* Inner shadow to create depth */
+        inset 0 2px 4px rgba(0,0,0,0.1),
+        /* Outer glow */
+        0 -1px 2px rgba(255,255,255,0.1),
+        0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Update the neumorphic surface to not block content */
+.neumorphic-surface {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 0;
+    background: transparent;
+    /*
+    background: linear-gradient(
+        145deg,
+        rgba(245, 246, 250, 0.6),
+        rgba(235, 236, 240, 0.6)
+    );
+    */
+    /* backdrop-filter: blur(8px); */
+    pointer-events: none; /* Allow clicking through */
+}
+
+/* Add cut-out effect to other common elements */
+.button,
+.settings-card,
+.dashboard-card {
+    box-shadow: 
+        inset 0 2px 4px rgba(0, 0, 0, 0.1),
+        inset 0 -1px 2px rgba(0, 0, 0, 0.05),
+        0 -1px 2px rgba(255, 255, 255, 0.1);
+    background: rgba(245, 246, 250, 0.7);
+    backdrop-filter: blur(5px);
+}
+
+/* Update the background container */
+#background-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Update form elements to be visible */
+input, select, textarea, button {
+    position: relative;
+    z-index: 3;
+}
+
+#reaction-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    opacity: 0.1; /* Adjust this value to control the background intensity */
+}

@@ -1,0 +1,38 @@
+{% extends "design/method_base.html" %}
+
+{% block title %}MCMC Design{% endblock %}
+
+{% block page_content %}
+<div class="design-container">
+    <h1>Markov Chain Monte Carlo Design</h1>
+    <p class="description">Select a sampling strategy for generating peptide sequences.</p>
+
+    <div class="method-grid">
+        <div class="method-card">
+            <h2>Property Optimization</h2>
+            <p>Sample a peptide library to optimize specific properties.</p>
+            <div class="feature-actions">
+                <button class="button primary">Design Library</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block parameters_content %}
+<div class="setting-group">
+    <label>Temperature</label>
+    <input type="number" class="input-field" min="0.1" max="10" step="0.1" value="1.0">
+</div>
+<div class="setting-group">
+    <label>Steps</label>
+    <input type="number" class="input-field" min="100" max="10000" value="1000">
+</div>
+<div class="setting-group">
+    <label>Acceptance Criterion</label>
+    <select class="select-field">
+        <option value="metropolis">Metropolis</option>
+        <option value="glauber">Glauber</option>
+    </select>
+</div>
+{% endblock %} 

@@ -1,72 +1,100 @@
-## PepLab
+# PepLab
 
 PepLab is a peptide library generation toolkit designed to support various workflows for processing peptide libraries, generating 3D structures, analyzing reactivity, planning reactions, and executing reactions. It provides a comprehensive platform for peptide-related research and analysis.
 
-### Key Features
+## Features
 
-- **SMILES to Graph Conversion:** Parse SMILES notation to create graph representations allowing for reaction modeling and combinatorial peptide library enumeration.
-- **3D Structure Generation:** Generate possible 3D structures using conformer generation, molecular dynamics (MD) simulation, or experimental structure loading.
-- **Reactivity Analysis:** Calculate reactivity scores for reactive sites and generate possible reaction pathways.
-- **Reaction Planning:** Evaluate reaction conditions and select the most viable pathways.
-- **Reaction Execution:** Model bond formation and update electron positions to reflect new molecular structures.
-- **Library Assembly and Analysis:** Generate peptide libraries, calculate properties, and store results.
+- **Design**: Create and enumerate peptide libraries using a variety of design strategies including:
+  - Combinatorial methods
+  - Generative AI models
+  - Genetic algorithms
+  - Markov chain Monte Carlo simulations
+- **Analysis**: Analyze library data inlcuding:
+  - Peptide properties
+  - Experimental results
+  - DEL sequencing data
+  - ...
+- **Modeling**: Model peptide structures and interactions using:
+  - State-of-the-art structure prediction models
+  - Molecular dynamics
+  - Molecular docking
+  - ...
+- **Optimization**: Optimize peptide libraries for desired properties using:
+  - Genetic algorithms
+  - Machine learning models
+  - Markov chain Monte Carlo simulations
 
-### Library Generation
+## Installation
 
-Library generation in PepLab involves creating a diverse set of molecules that can be used for various applications such as virtual screening, drug design, and combinatorial chemistry.
+1. Clone the repository:
 
-#### Steps in Library Generation
+```bash
+git clone https://github.com/yourusername/peplab.git
+cd peplab
+```
 
-1. **Define Building Blocks:**
-   - Identify and list the core structures and fragments (building blocks) that will be used to create the library.
+2. Create and activate a virtual environment:
 
-2. **Combinatorial Enumeration:**
-   - Combine building blocks in all possible ways to generate a diverse set of molecules.
+On Unix/macOS
 
-3. **Filter and Optimize:**
-   - Apply filters
-   - Optimize the library for specific properties (e.g., permeability, activity, mass differentiation).
+```bash
+python -m venv venv
+source venv/bin/activate
+```
 
-4. **Output Library:**
-   - Store the generated library in a suitable format (e.g. CSV, JSON, PDB, SDF, SMILES).
+On Windows
 
-### Molecular Graph Modeling
+```bash
+python -m venv venv
+.\venv\Scripts\activate
+```
 
-Molecular graph modeling in PepLab involves representing molecules as graphs where nodes represent atoms and edges represent bonds. This model allows for efficient manipulation and analysis of molecular structures.
+3. Install dependencies:
 
-#### Steps in Molecular Graph Modeling
+```bash
+pip install -r requirements.txt
+```
 
-1. **Graph Construction:**
-   - Parse molecular representations (e.g., SMILES) to create a graph.
+## Usage
 
-2. **Graph Manipulation:**
-   - Perform operations like adding/removing atoms, modifying bonds, etc.
+1. Activate the virtual environment:
 
-3. **Graph Analysis:**
-   - Calculate molecular properties, identify substructures, etc.
+On Unix/macOS:
 
-### Example Workflows
+```bash
+source venv/bin/activate
+```
 
-PepLab supports multiple workflows for processing peptide libraries. The existing workflows include:
+On Windows (untested):
 
-1. **Input Processing:**
-   - Handles library definition JSON and converts SMILES to graphs.
-   - Processes residues and generates peptides directly.
+```bash
+.\venv\Scripts\activate
+```
 
-2. **Reactivity Analysis:**
-   - Calculates reactivity scores and generates possible pathways.
-   - Applies temperature effects and scores pathway viability.
+2. Run the application:
 
-3. **Reaction Planning:**
-   - Evaluates reaction conditions and selects preferred pathways.
-   - Checks site compatibility and evaluates reaction conditions.
+```bash
+flask run
+```
 
-4. **Reaction Execution:**
-   - Initializes selected reactions and checks spatial arrangements.
-   - Begins bond formation, updates electron positions, and generates new molecules.
+The application will be available at http://127.0.0.1:5000
 
-5. **Library Assembly and Analysis:**
-   - Adds peptides to the library and calculates properties.
+To stop the server:
+
+1. Press CTRL+C in the terminal
+2. Deactivate the virtual environment:
+
+```bash
+deactivate
+```
+
+## Development
+
+To run in development mode with auto-reload:
+
+```bash
+flask run --debug
+```
 
 ### Contributing
 

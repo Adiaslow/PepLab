@@ -1,0 +1,51 @@
+{% extends "design/method_base.html" %}
+
+{% block title %}Genetic Algorithm Design{% endblock %}
+
+{% block page_content %}
+<div class="design-container">
+    <h1>Genetic Algorithm Design</h1>
+    <p class="description">Select an optimization strategy for evolving peptide sequences.</p>
+
+    <div class="method-grid">
+        <div class="method-card">
+            <h2>Mass Differentiation</h2>
+            <p>Evolve a peptide library to maximize mass differences between library members for optimal MS analysis.</p>
+            <div class="feature-actions">
+                <button class="button primary">Design Library</button>
+            </div>
+        </div>
+
+        <div class="method-card">
+            <h2>Property Optimization</h2>
+            <p>Evolve a peptide library to optimize specific properties.</p>
+            <div class="feature-actions">
+                <button class="button primary">Design Library</button>
+            </div>
+        </div>
+
+        <div class="method-card">
+            <h2>Diversity Optimization</h2>
+            <p>Evolve a peptide library to maximize chemical diversity and coverage of chemical space.</p>
+            <div class="feature-actions">
+                <button class="button primary">Design Library</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block parameters_content %}
+<div class="setting-group">
+    <label>Population Size</label>
+    <input type="number" class="input-field" min="10" max="1000" value="100">
+</div>
+<div class="setting-group">
+    <label>Mutation Rate</label>
+    <input type="range" class="slider" min="0" max="100" value="10">
+</div>
+<div class="setting-group">
+    <label>Generations</label>
+    <input type="number" class="input-field" min="1" max="1000" value="50">
+</div>
+{% endblock %} 

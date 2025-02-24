@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}{{ display_names[method_type] }}{% endblock %}
+
+{% block page_content %}
+<div class="page-content">
+    <h1>{{ display_names[method_type] }}</h1>
+    
+    <div class="options-grid">
+        <!-- Design Parameters -->
+        <div class="option-card">
+            <div class="option-card-icon">
+                <i class="fas fa-sliders-h"></i>
+            </div>
+            <h2 class="option-card-title">Parameters</h2>
+            <div class="settings-content">
+                <!-- Add your parameter inputs here -->
+                <div class="setting-group">
+                    <label>Parameter 1</label>
+                    <input type="text" class="input-field">
+                </div>
+                <div class="setting-group">
+                    <label>Parameter 2</label>
+                    <select class="select-field">
+                        <option>Option 1</option>
+                        <option>Option 2</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Building Blocks Selection -->
+        <div class="option-card">
+            <div class="option-card-icon">
+                <i class="fas fa-cubes"></i>
+            </div>
+            <h2 class="option-card-title">Building Blocks</h2>
+            <div class="settings-content">
+                <!-- Add your building blocks selection here -->
+            </div>
+        </div>
+
+        <!-- Constraints -->
+        <div class="option-card">
+            <div class="option-card-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h2 class="option-card-title">Constraints</h2>
+            <div class="settings-content">
+                <!-- Add your constraints inputs here -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

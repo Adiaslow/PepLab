@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block page_content %}
+<div class="page-content">
+    <h1>Dashboard</h1>
+    
+    <div class="options-grid">
+        <!-- Load Library -->
+        <label class="option-card" for="library-file">
+            <div class="option-card-icon">
+                <i class="fas fa-file-upload"></i>
+            </div>
+            <h2 class="option-card-title">Load Library</h2>
+            <p class="option-card-description">Import peptide libraries from files</p>
+            <input type="file" id="library-file" name="library" accept=".csv,.xlsx,.tsv" 
+                   class="file-input" onchange="handleFileUpload(this)">
+        </label>
+
+        <!-- Design Library -->
+        <a href="{{ url_for('design.design') }}" class="option-card">
+            <div class="option-card-icon">
+                <i class="fas fa-drafting-compass"></i>
+            </div>
+            <h2 class="option-card-title">Design Library</h2>
+            <p class="option-card-description">Create new peptide libraries</p>
+        </a>
+
+        <!-- Analyze Library -->
+        <a href="{{ url_for('analysis.analysis') }}" class="option-card">
+            <div class="option-card-icon">
+                <i class="fas fa-chart-bar"></i>
+            </div>
+            <h2 class="option-card-title">Analyze Library</h2>
+            <p class="option-card-description">Analyze peptide properties and patterns</p>
+        </a>
+
+        <!-- Model Library -->
+        <a href="{{ url_for('modeling.modeling') }}" class="option-card">
+            <div class="option-card-icon">
+                <i class="fas fa-cube"></i>
+            </div>
+            <h2 class="option-card-title">Model Library</h2>
+            <p class="option-card-description">Model peptide structures and interactions</p>
+        </a>
+
+        <!-- Optimize Library -->
+        <a href="{{ url_for('optimization.optimization') }}" class="option-card">
+            <div class="option-card-icon">
+                <i class="fas fa-sliders-h"></i>
+            </div>
+            <h2 class="option-card-title">Optimize Library</h2>
+            <p class="option-card-description">Optimize peptide properties and performance</p>
+        </a>
+
+        <!-- Save Library -->
+        <a href="#" class="option-card" onclick="handleLibrarySave(); return false;">
+            <div class="option-card-icon">
+                <i class="fas fa-file-download"></i>
+            </div>
+            <h2 class="option-card-title">Save Library</h2>
+            <p class="option-card-description">Export your peptide library</p>
+        </a>
+    </div>
+
+    <!-- Library Statistics -->
+    <h2 class="section-title mt-3">Library Statistics</h2>
+    <div class="stats-card option-card">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="fas fa-dna"></i>
+                </div>
+                <h3>Peptides</h3>
+                <p class="stat-value">{{ stats.peptides_count|default(0) }}</p>
+                <p class="stat-subtitle">Total sequences</p>
+            </div>
+            
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="fas fa-cubes"></i>
+                </div>
+                <h3>Building Blocks</h3>
+                <p class="stat-value">{{ stats.blocks_count|default(0) }}</p>
+                <p class="stat-subtitle">Available blocks</p>
+            </div>
+            
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h3>Properties</h3>
+                <p class="stat-value">{{ stats.properties_count|default(0) }}</p>
+                <p class="stat-subtitle">Tracked properties</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function handleFileUpload(input) {
+    if (input.files.length > 0) {
+        const formData = new FormData();
+        formData.append('library', input.files[0]);
+        
+        fetch('{{ url_for("dashboard.upload_library") }}', {
+            method: 'POST',
+            body: formData
+        }).then(response => {
+            window.location.reload();
+        }).catch(error => {
+            console.error('Upload failed:', error);
+        });
+    }
+}
+
+function handleLibrarySave() {
+    fetch('{{ url_for("dashboard.download_library") }}')
+        .then(response => response.blob())
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'peptide_library.csv';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+        })
+        .catch(error => {
+            console.error('Download failed:', error);
+            alert('Failed to download library');
+        });
+}
+</script>
+{% endblock %} 

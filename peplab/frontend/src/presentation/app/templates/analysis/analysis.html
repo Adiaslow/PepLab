@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% from "components/page_header.html" import page_header %}
+
+{% block title %}Analysis{% endblock %}
+
+{% block page_content %}
+<div class="page-content">
+    {{ page_header("Analysis") }}
+    
+    <div class="options-grid">
+        <!-- Analysis options as cards -->
+        <a href="{{ url_for('analysis.handle_analysis', analysis_type='cheminformatic') }}" class="option-card">
+            <div class="option-card-icon">
+                <i class="fas fa-atom"></i>
+            </div>
+            <h2 class="option-card-title">{{ display_names['cheminformatic'] }}</h2>
+            <p class="option-card-description">{{ method_descriptions['cheminformatic'] }}</p>
+        </a>
+
+        <!-- Data Analysis -->
+        <a href="{{ url_for('analysis.handle_analysis', analysis_type='data_analysis') }}" class="option-card">
+            <div class="option-card-icon">
+                <i class="fas fa-chart-bar"></i>
+            </div>
+            <h2 class="option-card-title">{{ display_names['data_analysis'] }}</h2>
+            <p class="option-card-description">{{ method_descriptions['data_analysis'] }}</p>
+        </a>
+
+        <!-- Machine Learning -->
+        <a href="{{ url_for('analysis.handle_analysis', analysis_type='machine_learning') }}" class="option-card">
+            <div class="option-card-icon">
+                <i class="fas fa-brain"></i>
+            </div>
+            <h2 class="option-card-title">{{ display_names['machine_learning'] }}</h2>
+            <p class="option-card-description">{{ method_descriptions['machine_learning'] }}</p>
+        </a>
+
+        <!-- Simulation -->
+        <a href="{{ url_for('analysis.handle_analysis', analysis_type='simulation') }}" class="option-card">
+            <div class="option-card-icon">
+                <i class="fas fa-cube"></i>
+            </div>
+            <h2 class="option-card-title">{{ display_names['simulation'] }}</h2>
+            <p class="option-card-description">{{ method_descriptions['simulation'] }}</p>
+        </a>
+    </div>
+</div>
+{% endblock %} 

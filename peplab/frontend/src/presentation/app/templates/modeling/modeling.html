@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% from "components/page_header.html" import page_header %}
+
+{% block title %}Modeling{% endblock %}
+
+{% block page_content %}
+<div class="page-content">
+    {{ page_header("Modeling") }}
+    
+    <div class="options-grid">
+        <!-- Modeling options as cards -->
+        <a href="{{ url_for('modeling.handle_modeling', modeling_type='docking') }}" class="option-card">
+            <div class="option-card-icon">
+                <i class="fas fa-puzzle-piece"></i>
+            </div>
+            <h2 class="option-card-title">{{ display_names['docking'] }}</h2>
+            <p class="option-card-description">{{ method_descriptions['docking'] }}</p>
+        </a>
+
+        <!-- Force Field -->
+        <a href="{{ url_for('modeling.handle_modeling', modeling_type='force_field') }}" class="option-card">
+            <div class="option-card-icon">
+                <i class="fas fa-atom"></i>
+            </div>
+            <h2 class="option-card-title">{{ display_names['force_field'] }}</h2>
+            <p class="option-card-description">{{ method_descriptions['force_field'] }}</p>
+        </a>
+
+        <!-- Machine Learning -->
+        <a href="{{ url_for('modeling.handle_modeling', modeling_type='machine_learning') }}" class="option-card">
+            <div class="option-card-icon">
+                <i class="fas fa-brain"></i>
+            </div>
+            <h2 class="option-card-title">{{ display_names['machine_learning'] }}</h2>
+            <p class="option-card-description">{{ method_descriptions['machine_learning'] }}</p>
+        </a>
+
+        <!-- Molecular Dynamics -->
+        <a href="{{ url_for('modeling.handle_modeling', modeling_type='molecular_dynamics') }}" class="option-card">
+            <div class="option-card-icon">
+                <i class="fas fa-cubes"></i>
+            </div>
+            <h2 class="option-card-title">{{ display_names['molecular_dynamics'] }}</h2>
+            <p class="option-card-description">{{ method_descriptions['molecular_dynamics'] }}</p>
+        </a>
+    </div>
+</div>
+{% endblock %} 

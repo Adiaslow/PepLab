@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Fractal Design{% endblock %}
+
+{% block page_content %}
+<div class="design-container">
+    <h1>Fractal Design</h1>
+    <p class="description">Select a fractal-based strategy for generating peptide libraries.</p>
+
+    <div class="method-grid">
+        <div class="method-card">
+            <h2>Self-Similar</h2>
+            <p>Generate peptide libraries using self-similar patterns at different scales.</p>
+            <div class="feature-actions">
+                <button class="button primary">Design Library</button>
+            </div>
+        </div>
+
+        <div class="method-card">
+            <h2>Recursive</h2>
+            <p>Build peptide sequences using recursive patterns.</p>
+            <div class="feature-actions">
+                <button class="button primary">Design Library</button>
+            </div>
+        </div>
+
+        <div class="method-card">
+            <h2>Space-Filling</h2>
+            <p>Design peptide libraries using space-filling curves.</p>
+            <div class="feature-actions">
+                <button class="button primary">Design Library</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

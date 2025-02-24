@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}">
+{% endblock %}
+
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<div class="settings-container">
+    <h1>Settings</h1>
+    
+    <div class="settings-grid">
+        <div class="settings-card">
+            <h2>General</h2>
+            <form class="settings-form" action="{{ url_for('dashboard.save_general_settings') }}" method="post">
+                <div class="form-group">
+                    <label for="default-format">Default Export Format</label>
+                    <select id="default-format" name="default_format">
+                        <option value="csv">CSV</option>
+                        <option value="xlsx">Excel</option>
+                        <option value="txt">Text</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="auto-save">Auto-save Interval (minutes)</label>
+                    <input type="number" id="auto-save" name="auto_save" min="0" max="60" value="15">
+                </div>
+                <button type="submit" class="button primary">Save Changes</button>
+            </form>
+        </div>
+
+        <div class="settings-card">
+            <h2>Computation</h2>
+            <form class="settings-form" action="{{ url_for('dashboard.save_compute_settings') }}" method="post">
+                <div class="form-group">
+                    <label for="max-threads">Maximum Threads</label>
+                    <input type="number" id="max-threads" name="max_threads" min="1" max="32" value="4">
+                </div>
+                <div class="form-group">
+                    <label for="gpu-enabled">Enable GPU Acceleration</label>
+                    <input type="checkbox" id="gpu-enabled" name="gpu_enabled">
+                </div>
+                <button type="submit" class="button primary">Save Changes</button>
+            </form>
+        </div>
+
+        <div class="settings-card">
+            <h2>Appearance</h2>
+            <form class="settings-form" action="{{ url_for('dashboard.save_appearance_settings') }}" method="post">
+                <div class="form-group">
+                    <label for="theme">Theme</label>
+                    <select id="theme" name="theme">
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                        <option value="system">System Default</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="compact-view">Compact View</label>
+                    <input type="checkbox" id="compact-view" name="compact_view">
+                </div>
+                <button type="submit" class="button primary">Save Changes</button>
+            </form>
+        </div>
+
+        <div class="settings-card">
+            <h2>Data Management</h2>
+            <form class="settings-form" action="{{ url_for('dashboard.clear_data') }}" method="post">
+                <div class="form-group">
+                    <label for="clear-cache">Clear Application Cache</label>
+                    <button type="submit" name="action" value="clear_cache" class="button secondary">Clear Cache</button>
+                </div>
+                <div class="form-group">
+                    <label for="reset-settings">Reset All Settings</label>
+                    <button type="submit" name="action" value="reset_settings" class="button secondary">Reset Settings</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Building Blocks Explorer{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/blocks.css') }}">
+{% endblock %}
+
+{% block page_content %}
+<div class="blocks-explorer">
+    <div class="sets-column">
+        <h2>Building Block Sets</h2>
+        <div class="sets-list">
+            <div class="set-item">
+                <label class="toggle-label">
+                    <input type="checkbox" class="set-toggle" data-set="user">
+                    <span class="toggle-text">User Library</span>
+                </label>
+            </div>
+            <div class="set-item">
+                <label class="toggle-label">
+                    <input type="checkbox" class="set-toggle" data-set="canonical">
+                    <span class="toggle-text">Canonical Amino Acids</span>
+                </label>
+            </div>
+            <div class="set-item">
+                <label class="toggle-label">
+                    <input type="checkbox" class="set-toggle" data-set="swissSidechain">
+                    <span class="toggle-text">SwissSidechain</span>
+                </label>
+            </div>
+            <div class="set-item">
+                <label class="toggle-label">
+                    <input type="checkbox" class="set-toggle" data-set="cycPeptMPDB">
+                    <span class="toggle-text">CycPeptMPDB</span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <div class="blocks-column">
+        <h2>Building Blocks</h2>
+        <div class="search-bar">
+            <input type="text" placeholder="Search building blocks..." id="block-search">
+        </div>
+        <div class="blocks-list">
+            <!-- Blocks will be populated here based on selected sets -->
+            <div class="block-item" data-set="canonical">
+                <span class="block-name">L-Alanine</span>
+                <span class="block-code">Ala</span>
+            </div>
+            <div class="block-item" data-set="canonical">
+                <span class="block-name">L-Arginine</span>
+                <span class="block-code">Arg</span>
+            </div>
+            <!-- More blocks... -->
+        </div>
+    </div>
+
+    <div class="preview-column">
+        <h2>Structure Preview</h2>
+        <div class="preview-container">
+            <img src="{{ url_for('static', filename='images/placeholder-structure.svg') }}" 
+                 alt="Building block structure" 
+                 class="structure-preview"
+                 id="structure-preview">
+            <div class="preview-details">
+                <h3 id="preview-name">Select a building block</h3>
+                <p id="preview-details">Click on a building block to view its structure</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle set toggles
+    const setToggles = document.querySelectorAll('.set-toggle');
+    setToggles.forEach(toggle => {
+        toggle.addEventListener('change', function() {
+            const set = this.dataset.set;
+            const blocks = document.querySelectorAll(`.block-item[data-set="${set}"]`);
+            blocks.forEach(block => {
+                block.style.display = this.checked ? 'flex' : 'none';
+            });
+        });
+    });
+
+    // Handle block selection
+    const blockItems = document.querySelectorAll('.block-item');
+    blockItems.forEach(block => {
+        block.addEventListener('click', function() {
+            // Remove active class from all blocks
+            blockItems.forEach(b => b.classList.remove('active'));
+            // Add active class to clicked block
+            this.classList.add('active');
+            
+            // Update preview (placeholder for now)
+            const name = this.querySelector('.block-name').textContent;
+            document.getElementById('preview-name').textContent = name;
+            document.getElementById('preview-details').textContent = 
+                `${name} from ${this.dataset.set} set`;
+        });
+    });
+
+    // Handle search
+    const searchInput = document.getElementById('block-search');
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const blocks = document.querySelectorAll('.block-item');
+        blocks.forEach(block => {
+            const name = block.querySelector('.block-name').textContent.toLowerCase();
+            const code = block.querySelector('.block-code').textContent.toLowerCase();
+            const visible = name.includes(searchTerm) || code.includes(searchTerm);
+            block.style.display = visible ? 'flex' : 'none';
+        });
+    });
+});
+</script>
+{% endblock %} 

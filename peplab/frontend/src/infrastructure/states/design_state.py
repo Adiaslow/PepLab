@@ -1,60 +1,39 @@
 # peplab/frontend/src/application/states/design_state.py
 """
-This module is responsible for handling the design state of the application.
-
-The design state is the state of the application when the user is designing the library.
-Classes:
-    DesignState: The design state of the application.
+This module contains the DesignState class which manages design-related state.
 """
 
-# Standard Library Imports
-from enum import Enum
-from typing import List
-
-# Internal Imports
-from ..interfaces.state import State
-from core.types.design_types import DesignType
-from infrastructure.managers.state_manager import StateManager
+from typing import Optional
+from peplab.frontend.src.core.types.design_types import DesignType
+from peplab.frontend.src.infrastructure.interfaces.state import State
 
 
-class DesignState(State):
-    """The design state of the application.
-
-    Methods:
-        handle: Handle the design state.
+class DesignState(State[DesignType]):
+    """
+    Represents the design state of the application.
+    Handles design-specific behavior and transitions.
     """
 
     def __init__(self) -> None:
-        """Initialize the design state.
-
-        This method is responsible for initializing the design state.
-        """
+        """Initialize the design state."""
         super().__init__()
-        self.substates: List[DesignType] = [substate for substate in DesignType]
+
+    def is_valid_substate(self, value: DesignType) -> bool:
+        """Validate design substate."""
+        return isinstance(value, DesignType)
 
     def handle(self) -> None:
-        """Handle the design state.
+        """Handle design state behavior."""
+        # Implementation of design state handling
+        pass
 
-        This method is responsible for handling the design state.
-        """
-        match self.substate:
-            case DesignType.COMBINATORIC:
-                # Initialize combinatoric backend scripts
-                ...
-            case DesignType.GENERATIVE:
-                # Initialize generative backend scripts
-                ...
-            case DesignType.GENETIC:
-                # Initialize genetic backend scripts
-                ...
-            case DesignType.MCMC:
-                # Initialize MCMC backend scripts
-                ...
-            case DesignType.RANDOM:
-                # Initialize random backend scripts
-                ...
-            case _:
-                raise ValueError(f"Invalid design type: {self.substate}")
+    def get_route(self) -> str:
+        """Get the current route based on state and substate."""
+        base_route = "/design"
+        if self.substate:
+            return f"{base_route}/{self.substate.value}"
+        return base_route
 
-
-state_manager = StateManager(DesignState())
+    def __str__(self) -> str:
+        """Return string representation of the state."""
+        return f"Design State: {self.substate.value}"

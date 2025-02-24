@@ -1,152 +1,62 @@
 # peplab/frontend/src/infrastructure/managers/state_manager.py
 """
-This module is responsible for managing the state of the application.
-It is responsible for setting the state of the application and handling the state.
-
-Classes:
-    StateManager: Manages the state of the application.
+This module contains the StateManager class which manages application state transitions.
 """
 
-# Internal imports
-from peplab.frontend.src.infrastructure.interfaces import State
+from typing import Optional
+from peplab.frontend.src.infrastructure.interfaces.state import State
+from peplab.frontend.src.infrastructure.states.initialization_state import (
+    InitializationState,
+)
 
 
 class StateManager:
-    """This class is responsible for managing the state of the application.
-    It is responsible for setting the state of the application and handling the state.
-
-    Attributes:
-        _state: The current state of the application.
-        _state_history: The history of the states.
-
-    Methods:
-        __init__: Initialize the StateManager.
-        set_state: Set the state of the application.
-        get_state: Get the current state of the application.
-        state: Get the current state of the application.
-        state_history: Get the history of the states.
-        handle: Handle the current state.
-        __validate_state: Validate the state.
+    """
+    Manages application state transitions using the State pattern.
+    Implements Singleton pattern to ensure only one state manager exists.
     """
 
-    _instance = None
+    _instance: Optional["StateManager"] = None
+    _current_state: Optional[State] = None
 
-    def __new__(cls, *args, **kwargs) -> "StateManager":
-        """Create a new instance of the StateManager.
-
-        Returns:
-            The new instance of the StateManager.
-        """
-        if not cls._instance:
-            cls._instance = super(StateManager, cls).__new__(cls, *args, **kwargs)
+    def __new__(cls) -> "StateManager":
+        """Create or return the singleton instance."""
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._current_state = InitializationState()
         return cls._instance
 
-    def __init__(self, state: State | None = None) -> None:
-        """Initialize the StateManager.
+    def __init__(self) -> None:
+        """Initialize with default state."""
+        if not getattr(self, "initialized", False):
+            self._current_state: Optional[State] = None
+            # Set initial state to InitializationState
+            self.set_state(InitializationState())
+            self.initialized = True
 
-        Args:
-            state: The initial state of the application.
+    @property
+    def current_state(self) -> Optional[State]:
+        """Get the current state.
 
-        Raises:
-            ValueError: If the state is not a valid state.
+        Returns:
+            Optional[State]: The current state
         """
-        if state is not None and not isinstance(state, State):
-            raise ValueError("State must be a valid state.")
-        self.__state: State | None = state
-        self.__state_history: list[State] = []
+        return self._current_state
 
     def set_state(self, state: State) -> None:
-        """Set the state of the application.
-
-        This method is responsible for setting the state of the application.
-        It will validate the state and set the state of the application.
+        """Set the current state.
 
         Args:
-            state: The state to set the application to.
-
-        Raises:
-            ValueError: If the state is not a valid state.
+            state: The state to set
         """
-        try:
-            self.__validate_state(state)
-            self.__state = state
-        except:
-            ...
-
-    def get_state(self) -> State | None:
-        """Get the current state of the application.
-
-        Returns:
-            The current state of the application.
-
-        Raises:
-            ValueError: If the state is not set.
-        """
-        if self.__state is None:
-            raise ValueError("State is not set.")
-        return self.__state
-
-    @property
-    def state(self) -> State | None:
-        """Get the current state of the application.
-
-        Returns:
-            The current state of the application.
-        """
-        return self.__state
-
-    @property
-    def current_state(self) -> State | None:
-        """Get the current state of the application.
-
-        Returns:
-            The current state of the application.
-        """
-        return self.__state
-
-    @property
-    def previous_state(self) -> State | None:
-        """Get the previous state of the application.
-
-        Returns:
-            The previous state of the application.
-        """
-        return self.__state_history[-1]
-
-    @property
-    def state_history(self) -> list[State]:
-        """Get the history of the states.
-
-        Returns:
-            The history of the states.
-        """
-        return self.__state_history
+        self._current_state = state
 
     def handle(self) -> None:
-        """Handle the current state.
+        """Handle the current state."""
+        if self._current_state:
+            self._current_state.handle()
 
-        This method is responsible for handling the current state.
-
-        Raises:
-            ValueError: If the state is not set.
-        """
-        if self.__state is not None:
-            self.__state.handle()
-        else:
-            raise ValueError("State is not set.")
-
-    def __validate_state(self, state: State) -> bool:
-        """Validate the state.
-
-        Args:
-            state: The state to validate.
-
-        Returns:
-            True if the state is valid, False otherwise.
-
-        Raises:
-            ValueError: If the state is not a valid state.
-        """
-        if not isinstance(state, State):
-            raise ValueError("State must be a valid state.")
-        return True
+    @classmethod
+    def reset(cls) -> None:
+        """Reset the singleton instance."""
+        cls._instance = None
