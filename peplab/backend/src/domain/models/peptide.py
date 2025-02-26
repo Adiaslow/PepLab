@@ -7,7 +7,7 @@ Classes:
 """
 
 # Standard Library Imports
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, Literal
 from uuid import UUID
 
 # Third Party Imports
