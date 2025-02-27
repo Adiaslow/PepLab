@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Building Block Explorer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/building-blocks.css') }}">
+</head>
+<body>
+    <div class="content">
+        <div id="building-block-explorer"></div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/building-blocks.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const explorer = new BuildingBlockExplorer('building-block-explorer');
+        });
+    </script>
+</body>
+</html> 

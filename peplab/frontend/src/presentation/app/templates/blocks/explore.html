@@ -61,7 +61,7 @@
     <div class="preview-column">
         <h2>Structure Preview</h2>
         <div class="preview-container">
-            <img src="{{ url_for('static', filename='images/placeholder-structure.svg') }}" 
+            <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB4PSIyMCIgeT0iMjAiIHdpZHRoPSIxNjAiIGhlaWdodD0iMTYwIiBmaWxsPSJub25lIiBzdHJva2U9IiNjY2MiIHN0cm9rZS13aWR0aD0iMiIvPjx0ZXh0IHg9IjEwMCIgeT0iMTEwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOTk5IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCI+U2VsZWN0IGEgYnVpbGRpbmcgYmxvY2s8L3RleHQ+PC9zdmc+" 
                  alt="Building block structure" 
                  class="structure-preview"
                  id="structure-preview">
@@ -79,34 +79,82 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Handle set toggles
     const setToggles = document.querySelectorAll('.set-toggle');
+    const blocksList = document.querySelector('.blocks-list');
+    
+    // Check if we should show user library
+    const urlParams = new URLSearchParams(window.location.search);
+    const showUserLibrary = urlParams.get('show_user_library') === 'true';
+    
+    // Auto-check user library toggle if needed
+    if (showUserLibrary) {
+        const userLibraryToggle = document.querySelector('.set-toggle[data-set="user"]');
+        if (userLibraryToggle && !userLibraryToggle.checked) {
+            userLibraryToggle.checked = true;
+            // Trigger the change event to load the blocks
+            loadBuildingBlocks('user');
+        }
+    }
+    
+    async function loadBuildingBlocks(set) {
+        try {
+            const response = await fetch(`/api/building-blocks/${set}`);
+            const data = await response.json();
+            
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
+            // Clear existing blocks for this set
+            const existingBlocks = blocksList.querySelectorAll(`.block-item[data-set="${set}"]`);
+            existingBlocks.forEach(block => block.remove());
+            
+            // Add new blocks
+            data.building_blocks.forEach(block => {
+                const blockItem = document.createElement('div');
+                blockItem.className = 'block-item';
+                blockItem.dataset.set = set;
+                
+                blockItem.innerHTML = `
+                    <span class="block-name">${block.name}</span>
+                    <span class="block-code">${block.code}</span>
+                `;
+                
+                blockItem.addEventListener('click', function() {
+                    // Update preview
+                    document.querySelectorAll('.block-item').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    document.getElementById('structure-preview').src = block.image;
+                    document.getElementById('preview-name').textContent = block.name;
+                    document.getElementById('preview-details').innerHTML = `
+                        Code: ${block.code} (${block.alt_code})<br>
+                        SMILES: ${block.smiles}<br>
+                        Set: ${block.set}
+                    `;
+                });
+                
+                blocksList.appendChild(blockItem);
+            });
+        } catch (error) {
+            console.error('Error loading building blocks:', error);
+            alert('Error loading building blocks: ' + error.message);
+        }
+    }
+
     setToggles.forEach(toggle => {
         toggle.addEventListener('change', function() {
             const set = this.dataset.set;
-            const blocks = document.querySelectorAll(`.block-item[data-set="${set}"]`);
-            blocks.forEach(block => {
-                block.style.display = this.checked ? 'flex' : 'none';
-            });
+            if (this.checked) {
+                loadBuildingBlocks(set);
+            } else {
+                // Hide blocks for this set
+                const blocks = document.querySelectorAll(`.block-item[data-set="${set}"]`);
+                blocks.forEach(block => block.style.display = 'none');
+            }
         });
     });
 
-    // Handle block selection
-    const blockItems = document.querySelectorAll('.block-item');
-    blockItems.forEach(block => {
-        block.addEventListener('click', function() {
-            // Remove active class from all blocks
-            blockItems.forEach(b => b.classList.remove('active'));
-            // Add active class to clicked block
-            this.classList.add('active');
-            
-            // Update preview (placeholder for now)
-            const name = this.querySelector('.block-name').textContent;
-            document.getElementById('preview-name').textContent = name;
-            document.getElementById('preview-details').textContent = 
-                `${name} from ${this.dataset.set} set`;
-        });
-    });
-
-    // Handle search
+    // Keep your existing search functionality
     const searchInput = document.getElementById('block-search');
     searchInput.addEventListener('input', function() {
         const searchTerm = this.value.toLowerCase();

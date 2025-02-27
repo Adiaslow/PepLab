@@ -1,0 +1,12 @@
+rdkit
+numpy
+pandas
+scipy
+matplotlib
+scikit-learn
+flask
+flask-cors
+flask-restful
+flask-sqlalchemy
+flask-migrate
+flask-login
