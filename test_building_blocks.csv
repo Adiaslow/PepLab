@@ -1,0 +1,21 @@
+name, alt_name1, alt_name2, smiles, position
+Alanine,Ala,A,CC(N)C(=O)O,0
+Arginine,Arg,R,NC(=O)NCCCC(N)C(=O)O,0
+Asparagine,Asn,N,NC(=O)CC(N)C(=O)O,0
+Aspartic Acid,Asp,D,O=C(O)CC(N)C(=O)O,0
+Cysteine,Cys,C,SC(C(=O)O)C(N),0
+Glutamic Acid,Glu,E,O=C(O)CCC(N)C(=O)O,1
+Glutamine,Gln,Q,NC(=O)CCC(N)C(=O)O,1
+Glycine,Gly,G,NCC(=O)O,1
+Histidine,His,H,NC(Cc1cnc[nH]1)C(=O)O,1
+Isoleucine,Ile,I,CCC(C)C(N)C(=O)O,1
+Leucine,Leu,L,CC(C)CC(N)C(=O)O,2
+Lysine,Lys,K,NCCCC(N)C(=O)O,2
+Methionine,Met,M,CSCCC(N)C(=O)O,2
+Phenylalanine,Phe,F,NC(Cc1ccccc1)C(=O)O,2
+Proline,Pro,P,O=C(O)C1CCCN1,2
+Serine,Ser,S,OCC(N)C(=O)O,3
+Threonine,Thr,T,CC(O)C(N)C(=O)O,3
+Tryptophan,Trp,W,NC(Cc1c[nH]c2ccccc12)C(=O)O,3
+Tyrosine,Tyr,Y,NC(Cc1ccc(O)cc1)C(=O)O,3
+Valine,Val,V,CC(C)C(N)C(=O)O,3
