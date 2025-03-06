@@ -1,4 +1,4 @@
-'''from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify
 import sys
 import os
 from flask_cors import CORS
@@ -65,4 +65,3 @@ def generate_composition():
 
 if __name__ == "__main__":
     app.run(debug=True, port=5001)  # Ensure it's on 5001
-'''
