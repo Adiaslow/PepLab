@@ -11,14 +11,16 @@ from itertools import combinations
 
 # External imports
 from typing import List, Any
+import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 # Internal imports
 from peplab.backend.src.application.interfaces.design.composition import Composition
 
-
 class Combination:
     @staticmethod
-    def generate_combinations(items: List[Any], length: int) -> List[List[Any]]:
+    def generate_composition(items: List[Any], length: int) -> List[List[Any]]:
         """
         Generates all unique combinations of items with a specified length, where order does not matter.
 

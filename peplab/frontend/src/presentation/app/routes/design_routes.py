@@ -19,9 +19,9 @@ Functions:
 from typing import Any, Dict, Set
 
 # External Imports
-from flask import Blueprint, render_template, request, flash, redirect, url_for
+from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify
 from werkzeug.utils import secure_filename
-
+import requests
 # Internal Imports
 from peplab.frontend.src.infrastructure.states.design_state import DesignState
 from peplab.frontend.src.infrastructure.managers.state_manager import StateManager
@@ -215,3 +215,11 @@ def generative():
 @design_bp.route("/force_field")
 def force_field():
     return render_template("coming_soon.html", title="Force Field Modeling")
+
+
+
+    
+@design_bp.route("/design/combinatoric/combination")
+def combination_design():
+    """Render the Combination design page."""
+    return render_template("combination.html")

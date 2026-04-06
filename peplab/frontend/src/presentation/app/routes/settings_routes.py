@@ -21,8 +21,6 @@ from typing import Any
 # External Imports
 from flask import Blueprint, render_template, request, flash, redirect, url_for
 import multiprocessing
-import torch
-
 # Internal Imports
 from peplab.frontend.src.infrastructure.managers.state_manager import StateManager
 
@@ -38,10 +36,8 @@ def settings() -> Any:
     """
     # Get number of CPUs
     num_cpus = multiprocessing.cpu_count()
-    # Check for GPU availability
-    gpu_available = (
-        torch.cuda.is_available() if hasattr(torch.cuda, "is_available") else False
-    )
+    # Check for GPU availability (Mocked for MVP)
+    gpu_available = False
 
     return render_template(
         "settings/settings.html", num_cpus=num_cpus, gpu_available=gpu_available

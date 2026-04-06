@@ -8,9 +8,11 @@ Classes:
 
 # Standard library imports
 import csv
-
+import sys
+import os
 # External imports
 from typing import List, Any
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 # Internal imports
 from peplab.backend.src.application.interfaces.design.composition import Composition

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Combination{% endblock %}
+
+{% block page_content %}
+<div class="page-content">
+    <div class="page-header">
+        <button class="back-button" onclick="history.back()">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <h1 class="page-title">Combination</h1>
+    </div>
+    
+    <div class="method-description">
+        Enter parameters for combination-based peptide generation.
+    </div>
+
+<!-- Parameters Button -->
+<div class="parameters-section">
+    <button id="open-parameters" class="btn-primary">Enter Parameters</button>
+</div>
+
+<!-- Modal for entering parameters -->
+<div id="parameters-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <h3>Set Parameters</h3>
+        <label for="sequence">Sequence:</label>
+        <input type="text" id="sequence" placeholder="Enter sequence">
+
+        <label for="num_permutations">Number of Permutations:</label>
+        <input type="number" id="num_permutations" placeholder="Enter a number">
+
+        <button id="submit-parameters" class="btn-success">Run</button>
+        <button id="close-modal" class="btn-danger">Close</button>
+    </div>
+</div>
+
+<!-- Results Display -->
+<div id="output" class="results-container"></div>
+
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/design.js') }}"></script>
+{% endblock %}

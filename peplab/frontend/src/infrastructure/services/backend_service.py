@@ -14,7 +14,7 @@ class BackendService:
 
     def __init__(self):
         """Initialize backend service with default configuration."""
-        self._backend_url = "http://localhost:5000"  # Configure as needed
+        self._backend_url = "http://localhost:5001/api"  # Unified API endpoint
         self._connection_status: Optional[bool] = None
 
     def verify_connection(self) -> bool:

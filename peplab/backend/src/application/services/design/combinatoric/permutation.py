@@ -12,7 +12,7 @@ from typing import List, Any
 
 class Permutation:
     @staticmethod
-    def generate_permutations(items: List[Any]) -> List[List[Any]]:
+    def generate_composition(items: List[Any], **kwargs) -> List[List[Any]]:
         """
         Generates all possible permutations of items, where order matters.
 

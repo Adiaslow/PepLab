@@ -20,6 +20,7 @@ from peplab.frontend.src.presentation.app.routes.optimization_routes import (
 )
 from peplab.frontend.src.presentation.app.routes.settings_routes import settings_bp
 from peplab.frontend.src.presentation.app.routes.blocks_routes import blocks_bp
+from peplab.backend.src.presentation.api.design_api import api_bp
 from peplab.frontend.src.infrastructure.orchestrator import (
     ApplicationOrchestrator,
     ApplicationContext,
@@ -66,6 +67,7 @@ class BlueprintManager:
             "optimization": BlueprintConfig(optimization_bp, "/optimization"),
             "settings": BlueprintConfig(settings_bp, "/settings"),
             "blocks": BlueprintConfig(blocks_bp, "/blocks"),
+            "api": BlueprintConfig(api_bp, "/api"),
         }
 
     def register_blueprints(self) -> None:

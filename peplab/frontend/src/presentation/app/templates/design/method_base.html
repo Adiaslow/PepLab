@@ -18,52 +18,71 @@
 
     <div class="options-grid">
         <!-- Parameters Card -->
-        <div class="option-card">
+        <div class="option-card" id="parameters-card">
             <div class="option-card-icon">
                 <i class="fas fa-sliders-h"></i>
             </div>
             <h2 class="option-card-title">Parameters</h2>
             <div class="settings-content">
-                {% block parameters_content %}{% endblock %}
+                {% block parameters_content %}
+                <button id="open-parameters" class="btn-primary">Enter Parameters</button>
+                {% endblock %}
             </div>
         </div>
 
         <!-- Building Blocks Card -->
-        <div class="option-card">
+        <div class="option-card" id="building-blocks-card">
             <div class="option-card-icon">
                 <i class="fas fa-cubes"></i>
             </div>
             <h2 class="option-card-title">Building Blocks</h2>
             <div class="settings-content">
-                {% block building_blocks_content %}{% endblock %}
+                {% block building_blocks_content %}
+                <button class="btn-secondary">Select Blocks</button>
+                {% endblock %}
             </div>
         </div>
 
         <!-- Constraints Card -->
-        <div class="option-card">
+        <div class="option-card" id="constraints-card">
             <div class="option-card-icon">
                 <i class="fas fa-check-circle"></i>
             </div>
             <h2 class="option-card-title">Constraints</h2>
             <div class="settings-content">
-                {% block constraints_content %}{% endblock %}
+                {% block constraints_content %}
+                <button class="btn-secondary">Define Constraints</button>
+                {% endblock %}
             </div>
         </div>
     </div>
 
+    <!-- Modal for entering parameters -->
+    <div id="parameters-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>Set Parameters for {{ method_type|title }}</h3>
+            <label for="sequence">Sequence:</label>
+            <input type="text" id="sequence" placeholder="Enter sequence">
+
+            <label for="num_permutations">Number of Permutations:</label>
+            <input type="number" id="num_permutations" placeholder="Enter a number">
+
+            <button id="submit-parameters" class="btn-success">Run</button>
+            <button id="close-modal" class="btn-danger">Close</button>
+        </div>
+    </div>
+
+    <!-- Results Display -->
+    <div id="output" class="results-container"></div>
+
     <!-- Action Buttons -->
     <div class="button-container">
-        <button class="action-button" onclick="history.back()">Back</button>
-        <button class="action-button" onclick="handleRun()">Run</button>
+        <button class="action-button" id="back-button">Back</button>
+        <button class="action-button" id="run-button">Run</button>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
-<script>
-function handleRun() {
-    // Implement run logic
-    console.log('Running {{ method_type }} design...');
-}
-</script>
-{% endblock %} 
+<script src="{{ url_for('static', filename='js/design.js') }}"></script>
+{% endblock %}
