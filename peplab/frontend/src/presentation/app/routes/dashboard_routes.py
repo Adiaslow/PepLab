@@ -125,12 +125,12 @@ def upload_library() -> Any:
     """
     if "library" not in request.files:
         flash("No file selected", "error")
-        return redirect(url_for("dashboard.index"))
+        return redirect(url_for("dashboard.dashboard"))
 
     file: FileStorage = request.files["library"]
     if not file.filename:  # Type check for None
         flash("No file selected", "error")
-        return redirect(url_for("dashboard.index"))
+        return redirect(url_for("dashboard.dashboard"))
 
     if allowed_file(file.filename):  # Now we know filename is not None
         filename: str = secure_filename(file.filename)
@@ -168,4 +168,4 @@ def save_library() -> Any:
         )
     except Exception as e:
         flash(f"Error saving library: {str(e)}", "error")
-        return redirect(url_for("dashboard.index"))
+        return redirect(url_for("dashboard.dashboard"))

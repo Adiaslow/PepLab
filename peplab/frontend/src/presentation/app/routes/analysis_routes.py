@@ -74,6 +74,9 @@ def handle_analysis(analysis_type: str) -> Any:
         else:
             state_manager.current_state.substate = analysis_enum
 
+        if analysis_type == "cheminformatic":
+            return render_template("analysis/cheminformatic.html")
+            
         return render_template("coming_soon.html")
     except ValueError:
         return "Invalid analysis type", 404

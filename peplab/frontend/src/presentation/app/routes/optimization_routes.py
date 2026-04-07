@@ -70,9 +70,6 @@ def handle_optimization(optimization_type: str) -> Any:
         else:
             state_manager.current_state.substate = optimization_enum
 
-        return render_template(
-            f"optimization/{optimization_type}.html",
-            optimization_type=optimization_type,
-        )
+        return render_template("coming_soon.html")
     except ValueError:
         return "Invalid optimization type", 404

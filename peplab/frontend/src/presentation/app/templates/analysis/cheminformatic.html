@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% from "components/page_header.html" import page_header %}
+
+{% block title %}Cheminformatics Analysis{% endblock %}
+
+{% block page_content %}
+<div class="page-content">
+    {{ page_header("Cheminformatics Analytics Dashboard") }}
+
+    <div class="split-layout" style="display: flex; gap: 20px; flex-wrap: wrap;">
+        <!-- INPUT PANE -->
+        <div class="form-container" style="flex: 1; min-width: 300px; padding: 20px; background: rgba(255, 255, 255, 0.05); border-radius: 12px; backdrop-filter: blur(10px);">
+            <h3 style="margin-top: 0;">Analyze Peptides</h3>
+            <p class="text-muted" style="margin-bottom: 20px; font-size: 0.9em;">
+                Enter sequence combinations to evaluate their physical properties using RDKit. 
+                Use commas to separate multiple combinations, and spaces to separate blocks.
+                <br><em>E.g., "Ala Ala", "Gly Ala", "Ala Trp"</em>
+            </p>
+            
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label for="sequence-input" style="display: block; font-weight: bold; margin-bottom: 8px;">Sequences to Analyze:</label>
+                <textarea id="sequence-input" rows="5" class="form-control" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #444; background: #222; color: #fff;" placeholder="Ala Ala, Gly Ala, Trp Gly"></textarea>
+            </div>
+            
+            <button id="analyze-btn" class="btn btn-primary" style="width: 100%; padding: 10px;">Run Analysis</button>
+        </div>
+
+        <!-- RESULTS PANE -->
+        <div class="results-container" style="flex: 2; min-width: 400px; padding: 20px; background: rgba(255, 255, 255, 0.02); border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+            <h3 style="margin-top: 0;">Calculated Properties</h3>
+            <div class="table-responsive" style="overflow-x: auto; margin-top: 15px;">
+                <table id="results-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid rgba(255,255,255,0.2);">
+                            <th style="padding: 10px;">Sequence</th>
+                            <th style="padding: 10px;">Mol. Wt (Da)</th>
+                            <th style="padding: 10px;">Exact Mass</th>
+                            <th style="padding: 10px;">LogP</th>
+                            <th style="padding: 10px;">TPSA</th>
+                            <th style="padding: 10px;">H-Donors</th>
+                            <th style="padding: 10px;">H-Acceptors</th>
+                            <th style="padding: 10px;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-body">
+                        <!-- Filled via JS -->
+                        <tr><td colspan="8" style="text-align: center; padding: 20px; color: #888;">No data loaded. Generate sequences to analyze.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const analyzeBtn = document.getElementById("analyze-btn");
+    const sequenceInput = document.getElementById("sequence-input");
+    const resultsBody = document.getElementById("results-body");
+
+    analyzeBtn.addEventListener("click", async function () {
+        const rawText = sequenceInput.value.trim();
+        if (!rawText) {
+            alert("Please enter at least one sequence.");
+            return;
+        }
+
+        // Parse: "Ala Ala, Gly Ala" -> [["Ala", "Ala"], ["Gly", "Ala"]]
+        const seqStrings = rawText.split(",").map(s => s.trim()).filter(s => s.length > 0);
+        const requestPayload = {
+            sequences: seqStrings.map(seqStr => seqStr.split(/\s+/))
+        };
+
+        analyzeBtn.disabled = true;
+        analyzeBtn.textContent = "Analyzing...";
+
+        try {
+            const response = await fetch("/api/analysis/properties", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(requestPayload)
+            });
+
+            const data = await response.json();
+            
+            if (!response.ok) {
+                alert("Error: " + (data.error || "Unknown error occurred"));
+                return;
+            }
+
+            // Render Table
+            resultsBody.innerHTML = ""; // Clear existing
+            data.results.forEach(res => {
+                const tr = document.createElement("tr");
+                tr.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
+                
+                const isSuccess = res.status === "Success";
+                
+                tr.innerHTML = `
+                    <td style="padding: 10px;"><strong>${res.sequence.join(" ")}</strong></td>
+                    <td style="padding: 10px;">${isSuccess ? res.molecular_weight : '-'}</td>
+                    <td style="padding: 10px;">${isSuccess ? res.exact_mass : '-'}</td>
+                    <td style="padding: 10px; color: ${isSuccess ? (res.log_p > 3 ? '#ff6b6b' : '#69db7c') : '#aaa'}">${isSuccess ? res.log_p : '-'}</td>
+                    <td style="padding: 10px;">${isSuccess ? res.tpsa : '-'}</td>
+                    <td style="padding: 10px;">${isSuccess ? res.h_donors : '-'}</td>
+                    <td style="padding: 10px;">${isSuccess ? res.h_acceptors : '-'}</td>
+                    <td style="padding: 10px; color: ${isSuccess ? '#69db7c' : '#ff6b6b'};"><small>${res.status}</small></td>
+                `;
+                resultsBody.appendChild(tr);
+            });
+            
+        } catch (err) {
+            console.error(err);
+            alert("Failed to connect to the analysis engine.");
+        } finally {
+            analyzeBtn.disabled = false;
+            analyzeBtn.textContent = "Run Analysis";
+        }
+    });
+});
+</script>
+{% endblock %}

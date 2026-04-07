@@ -62,8 +62,6 @@ def handle_modeling(modeling_type: str) -> Any:
         else:
             state_manager.current_state.substate = modeling_enum
 
-        return render_template(
-            f"modeling/{modeling_type}.html", modeling_type=modeling_type
-        )
+        return render_template("coming_soon.html")
     except ValueError:
         return "Invalid modeling type", 404

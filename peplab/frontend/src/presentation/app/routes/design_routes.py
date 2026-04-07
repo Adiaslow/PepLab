@@ -134,12 +134,12 @@ def upload_blocks() -> Any:
     """
     if "blocks" not in request.files:
         flash("No file selected", "error")
-        return redirect(url_for("design.index"))
+        return redirect(url_for("design.design"))
 
     file: Any = request.files["blocks"]
     if file.filename == "":
         flash("No file selected", "error")
-        return redirect(url_for("design.index"))
+        return redirect(url_for("design.design"))
 
     def allowed_file(filename: str) -> bool:
         """Check if the file has an allowed extension.
@@ -163,7 +163,7 @@ def upload_blocks() -> Any:
     else:
         flash("Invalid file type. Please upload a CSV, XLSX, or TXT file.", "error")
 
-    return redirect(url_for("design.index"))
+    return redirect(url_for("design.design"))
 
 
 @design_bp.route("/explore-blocks")
@@ -194,7 +194,7 @@ def save_blocks() -> Any:
     """
     # TODO: Implement actual building blocks export
     flash("Building blocks export not yet implemented", "error")
-    return redirect(url_for("design.index"))
+    return redirect(url_for("design.design"))
 
 
 
