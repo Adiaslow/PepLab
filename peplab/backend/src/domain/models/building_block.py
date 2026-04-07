@@ -13,8 +13,10 @@ from uuid import UUID, uuid4
 # Third Party Imports
 from pydantic import BaseModel, Field
 
-# Internal Imports
-from peplab.backend.src.domain.models.peptide import Peptide
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from peplab.backend.src.domain.models.peptide import Peptide
 
 
 class BuildingBlock(BaseModel):
@@ -70,8 +72,10 @@ class BuildingBlock(BaseModel):
 
     def __add__(self, other: "BuildingBlock") -> "Peptide":
         """Add two building blocks together to get a Peptide."""
+        from peplab.backend.src.domain.models.peptide import Peptide
         return Peptide(building_blocks=[self, other])
 
     def __iadd__(self, other: "BuildingBlock") -> "Peptide":
         """Add two building blocks together to get a Peptide."""
+        from peplab.backend.src.domain.models.peptide import Peptide
         return Peptide(building_blocks=[self, other])

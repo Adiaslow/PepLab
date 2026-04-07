@@ -26,7 +26,7 @@ def get_project_root() -> Path:
     Returns:
         Path: The project root directory
     """
-    return Path(__file__).parent
+    return Path(__file__).parent.parent
 
 
 def check_environment() -> Dict[str, str]:

@@ -40,9 +40,13 @@ def create_app(config_class=Config):
         "ALLOWED_HOSTS", "localhost,127.0.0.1"
     ).split(",")
 
+    from flask_migrate import Migrate
+    import peplab.backend.src.infrastructure.database.models  # Import models so Migrate knows about them
+    
     app.config.from_object(config_class)
 
     db.init_app(app)
+    Migrate(app, db)
 
     # Register all blueprints using the blueprint manager
     from peplab.frontend.src.presentation.app.blueprint_manager import (

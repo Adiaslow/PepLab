@@ -10,3 +10,5 @@ flask-restful
 flask-sqlalchemy
 flask-migrate
 flask-login
+pydantic
+python-dotenv

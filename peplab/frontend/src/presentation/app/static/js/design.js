@@ -100,9 +100,9 @@ function displayResults(data) {
 
     outputDiv.innerHTML = "<h3>Generated Sequences:</h3>";
 
-    if (data.permutations && data.permutations.length > 0) {
+    if (data.result && data.result.length > 0) {
         const list = document.createElement("ul");
-        data.permutations.forEach(seq => {
+        data.result.forEach(seq => {
             const item = document.createElement("li");
             item.textContent = seq.join(" ");
             list.appendChild(item);

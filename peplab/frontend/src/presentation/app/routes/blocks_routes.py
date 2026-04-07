@@ -35,39 +35,38 @@ def get_building_blocks(set_name: str) -> Any:
         JSON response with building blocks data
     """
     try:
-        # Map set names to file paths (you can expand this)
-        set_files = {
-            "canonical": "test_building_blocks.csv",
-            # Add more mappings as needed
-        }
+        from peplab.backend.src.infrastructure.repositories.building_block_repository import BuildingBlockRepository
+        repo = BuildingBlockRepository()
+        
+        try:
+            db_blocks = repo.get_all_building_blocks()
+        except Exception:
+            db_blocks = []
 
-        if set_name not in set_files:
-            return jsonify({"error": f"Unknown set: {set_name}"}), 404
-
-        # Read the CSV file
-        df = pd.read_csv(set_files[set_name])
         building_blocks = []
 
-        for _, row in df.iterrows():
-            # Create RDKit molecule from SMILES
-            mol = Chem.MolFromSmiles(row["smiles"])
+        for row in db_blocks:
+            smiles = row.metadata.get("smiles", "") if row.metadata else ""
+            img_str = ""
+            if smiles:
+                mol = Chem.MolFromSmiles(smiles)
+                if mol:
+                    # Generate 2D depiction
+                    img = Draw.MolToImage(mol)
+                    # Convert image to base64
+                    img_buffer = io.BytesIO()
+                    img.save(img_buffer, format="PNG")
+                    img_str = base64.b64encode(img_buffer.getvalue()).decode()
 
-            # Generate 2D depiction
-            img = Draw.MolToImage(mol)
-
-            # Convert image to base64
-            img_buffer = io.BytesIO()
-            img.save(img_buffer, format="PNG")
-            img_str = base64.b64encode(img_buffer.getvalue()).decode()
-
+            props = row.properties or {}
             # Create building block object
             building_block = {
-                "name": row["name"],
-                "code": row["alt_name1"],
-                "alt_code": row["alt_name2"],
-                "smiles": row["smiles"],
-                "position": row["position"],
-                "image": f"data:image/png;base64,{img_str}",
+                "name": row.name,
+                "code": props.get("alt_name1", ""),
+                "alt_code": props.get("alt_name2", ""),
+                "smiles": smiles,
+                "position": props.get("position", ""),
+                "image": f"data:image/png;base64,{img_str}" if img_str else "",
                 "set": set_name,
             }
             building_blocks.append(building_block)

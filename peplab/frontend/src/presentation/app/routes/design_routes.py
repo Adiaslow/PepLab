@@ -37,21 +37,11 @@ design_bp = Blueprint("design", __name__)
 # Design method descriptions
 METHOD_DESCRIPTIONS: Dict[str, str] = {
     "combinatoric": "Generate a peptide library using combinatorial methods",
-    "generative": "Generate a peptide library using generative AI models",
-    "genetic": "Generate a peptide library through simulated evolution using genetic algorithms",
-    "mcmc": "Generate a peptide library using Markov Chain Monte Carlo sampling",
-    "fractal": "Generate a peptide library using fractal-based patterns",
-    "random": "Generate a peptide library using random sampling",
 }
 
 # Display names for methods
 DISPLAY_NAMES: Dict[str, str] = {
     "combinatoric": "Combinatorial",
-    "generative": "Generative AI",
-    "genetic": "Genetic Algorithm",
-    "mcmc": "Markov Chain Monte Carlo",
-    "fractal": "Fractal-Based",
-    "random": "Random Sampling",
 }
 
 
@@ -207,14 +197,7 @@ def save_blocks() -> Any:
     return redirect(url_for("design.index"))
 
 
-@design_bp.route("/generative")
-def generative():
-    return render_template("coming_soon.html", title="Generative Design")
 
-
-@design_bp.route("/force_field")
-def force_field():
-    return render_template("coming_soon.html", title="Force Field Modeling")
 
 
 
