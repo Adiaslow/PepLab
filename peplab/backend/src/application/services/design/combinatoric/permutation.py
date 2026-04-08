@@ -12,17 +12,21 @@ from typing import List, Any
 
 class Permutation:
     @staticmethod
-    def generate_composition(items: List[Any], **kwargs) -> List[List[Any]]:
+    def generate_composition(items: List[Any], length: int = None, **kwargs) -> List[List[Any]]:
         """
         Generates all possible permutations of items, where order matters.
 
         Parameters:
         - items: List of items to permute (single set)
+        - length: The length of permutations to generate. Defaults to all items if None.
 
         Returns:
         - List of lists, each representing a unique permutation.
         """
-        all_permutations = list(permutations(items))
+        if length is not None:
+            all_permutations = list(permutations(items, r=length))
+        else:
+            all_permutations = list(permutations(items))
         return [list(perm) for perm in all_permutations]
 
 

@@ -59,6 +59,7 @@ class BlueprintManager:
         self.app: Flask = app
         self.orchestrator: ApplicationOrchestrator = ApplicationOrchestrator()
         from peplab.backend.src.presentation.api.analysis_api import analysis_api_bp
+        from peplab.backend.src.presentation.api.library_api import library_api_bp
         
         self.blueprints: Dict[str, BlueprintConfig] = {
             "main": BlueprintConfig(main_bp, "/"),
@@ -71,6 +72,7 @@ class BlueprintManager:
             "blocks": BlueprintConfig(blocks_bp, "/blocks"),
             "api": BlueprintConfig(api_bp, "/api"),
             "analysis_api": BlueprintConfig(analysis_api_bp, "/api/analysis"),
+            "library_api": BlueprintConfig(library_api_bp, "/api/library"),
         }
 
     def register_blueprints(self) -> None:

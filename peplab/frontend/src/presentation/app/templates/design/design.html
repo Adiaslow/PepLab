@@ -62,8 +62,8 @@
 {% block scripts %}
 <script>
 function handleDesignMethod(method) {
-    console.log('Selected design method:', method);
-    // TODO: Implement backend call when ready
+    console.log('Navigating to design method:', method);
+    window.location.href = `/design/${method}`;
 }
 
 function handleBlocksUpload(input) {

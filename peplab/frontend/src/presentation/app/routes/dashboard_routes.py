@@ -65,12 +65,14 @@ def dashboard() -> Any:
     if not isinstance(state_manager.current_state, DashboardState):
         state_manager.set_state(DashboardState())
 
-    # TODO: Get actual statistics from your data store
+    from peplab import db
+    from peplab.backend.src.infrastructure.database.models import BuildingBlockModel, PeptideModel, LibraryModel
+
     stats = {
-        "peptides_count": 0,  # Total number of peptides in library
-        "building_blocks_count": 0,  # Number of unique building blocks
-        "properties_count": 0,  # Number of calculated/measured properties
-        "recent_projects": [],  # List of recent projects
+        "peptides_count": db.session.query(PeptideModel).count(),
+        "blocks_count": db.session.query(BuildingBlockModel).count(),
+        "properties_count": db.session.query(LibraryModel).count(),  # Switched to Library count for utility
+        "recent_projects": [],  
     }
 
     return render_template("dashboard/dashboard.html", stats=stats)
@@ -151,21 +153,57 @@ def save_library() -> Any:
         File download response
     """
     try:
-        # TODO: Get the current library data from your state/database
-        # This is a placeholder that creates a sample CSV
+        from peplab import db
+        from peplab.backend.src.infrastructure.database.models import LibraryModel
+        from peplab.backend.src.application.services.analysis.cheminformatics_service import CheminformaticsService
+        import csv
+        import io
+
+        latest_lib = db.session.query(LibraryModel).order_by(LibraryModel.id.desc()).first()
+        if not latest_lib:
+            flash("No libraries found to export", "error")
+            return redirect(url_for("dashboard.dashboard"))
+
+        # Reconstruct sequences: in MVP we map unique building blocks from the peptide model, or just use peptide name
+        sequences = []
+        for peptide in latest_lib.peptides:
+            # name is formatted like "Alanine Glycine"
+            seq = peptide.name.split(" ") if peptide.name else []
+            if seq:
+                sequences.append(seq)
+                
+        # Generate properties
+        service = CheminformaticsService()
+        results = service.analyze_sequences(sequences)
+
         output = io.StringIO()
         writer = csv.writer(output)
-        writer.writerow(["Sequence", "MW", "LogP"])  # Headers
-        writer.writerow(["ACDEFGH", "823.32", "1.23"])  # Sample data
+        writer.writerow(["Sequence", "Mol. Wt (Da)", "Exact Mass", "LogP", "TPSA", "H-Donors", "H-Acceptors", "Status"])
+        
+        for res in results:
+            seq_str = " ".join(res["sequence"])
+            if res["status"] == "Success":
+                writer.writerow([
+                    seq_str,
+                    res["molecular_weight"],
+                    res["exact_mass"],
+                    res["log_p"],
+                    res["tpsa"],
+                    res["h_donors"],
+                    res["h_acceptors"],
+                    res["status"]
+                ])
+            else:
+                 writer.writerow([seq_str, "-", "-", "-", "-", "-", "-", res["status"]])
 
-        # Create the response
         output.seek(0)
         return send_file(
             io.BytesIO(output.getvalue().encode("utf-8")),
             mimetype="text/csv",
             as_attachment=True,
-            download_name="peptide_library.csv",
+            download_name=f"{latest_lib.name.replace(' ', '_')}_library.csv",
         )
     except Exception as e:
         flash(f"Error saving library: {str(e)}", "error")
         return redirect(url_for("dashboard.dashboard"))
+

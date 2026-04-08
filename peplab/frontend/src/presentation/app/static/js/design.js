@@ -51,12 +51,18 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             try {
+                const urlParts = window.location.pathname.split("/");
+                const strategyValue = urlParts[urlParts.length - 1];
+                
+                let parsedInput = sequence.includes(",") ? sequence.split(",") : sequence.split(/\s+/);
+                parsedInput = parsedInput.map(s => s.trim()).filter(s => s.length > 0);
+
                 const response = await fetch("/api/design/generate", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        strategy: "permutation",
-                        input_data: sequence.split(""),
+                        strategy: strategyValue,
+                        input_data: parsedInput,
                         r: parseInt(numPermutations)
                     }),
                 });
@@ -108,6 +114,40 @@ function displayResults(data) {
             list.appendChild(item);
         });
         outputDiv.appendChild(list);
+        
+        // Add Save to Database button
+        const saveBtn = document.createElement("button");
+        saveBtn.className = "btn btn-primary mt-3";
+        saveBtn.textContent = "Save to Database";
+        saveBtn.onclick = async function() {
+            const libraryName = prompt("Enter a name for this Library:", "Combinatorial Generation");
+            if (!libraryName) return;
+            
+            saveBtn.disabled = true;
+            saveBtn.textContent = "Saving...";
+            try {
+                const response = await fetch("/api/library/save", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        name: libraryName,
+                        sequences: data.result
+                    })
+                });
+                const resData = await response.json();
+                if (response.ok) {
+                    alert(`Successfully saved ${resData.peptide_count} combinations to Library: ${libraryName}`);
+                } else {
+                    alert("Failure: " + (resData.error || "Unknown Error"));
+                }
+            } catch (err) {
+                alert("Failed to connect to API.");
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = "Save to Database";
+            }
+        };
+        outputDiv.appendChild(saveBtn);
     } else {
         outputDiv.innerHTML += "<p>No sequences generated.</p>";
     }
