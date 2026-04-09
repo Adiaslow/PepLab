@@ -2,6 +2,10 @@
 
 {% block title %}{{ display_names[method_type] if method_type in display_names else method_type|title }}{% endblock %}
 
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/design.css') }}">
+{% endblock %}
+
 {% block page_content %}
 <div class="page-content">
     <div class="page-header">
@@ -61,14 +65,34 @@
     <div id="parameters-modal" class="modal" style="display: none;">
         <div class="modal-content">
             <h3>Set Parameters for {{ method_type|title }}</h3>
-            <label for="sequence">Sequence:</label>
-            <input type="text" id="sequence" placeholder="Enter sequence">
+            <div>
+                <label for="sequence">Building blocks (space or comma separated)</label>
+                <input type="text" id="sequence" placeholder="e.g. Alanine Glycine Valine">
+            </div>
+            <div>
+                <label for="num_permutations">Length (r)</label>
+                <input type="number" id="num_permutations" placeholder="e.g. 2" min="1">
+            </div>
+            <div class="modal-actions">
+                <button id="close-modal" class="btn-danger">Cancel</button>
+                <button id="submit-parameters" class="btn-success">Run</button>
+            </div>
+        </div>
+    </div>
 
-            <label for="num_permutations">Number of Permutations:</label>
-            <input type="number" id="num_permutations" placeholder="Enter a number">
-
-            <button id="submit-parameters" class="btn-success">Run</button>
-            <button id="close-modal" class="btn-danger">Close</button>
+    <!-- Save Library Name Modal -->
+    <div id="save-name-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>Save to Database</h3>
+            <p class="modal-hint">Give this library a name so you can find it on the Dashboard.</p>
+            <div>
+                <label for="library-name-input">Library Name</label>
+                <input type="text" id="library-name-input" placeholder="e.g. Dipeptide Permutations" autocomplete="off">
+            </div>
+            <div class="modal-actions">
+                <button id="cancel-save" class="btn-danger">Cancel</button>
+                <button id="confirm-save" class="btn-success">Save</button>
+            </div>
         </div>
     </div>
 
