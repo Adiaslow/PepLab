@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% from "components/page_header.html" import page_header %}
+
+{% block title %}My Building Block Library{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/blocks.css') }}">
+{% endblock %}
+
+{% block page_content %}
+<div class="page-content">
+    {{ page_header("My Building Block Library") }}
+
+    {% if blocks %}
+    <div class="search-bar" style="margin-bottom: 1.5rem;">
+        <input type="text" id="lib-search" placeholder="Search library..." style="width: 100%; max-width: 400px;">
+    </div>
+
+    <div class="blocks-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem;">
+        {% for b in blocks %}
+        {% set props = b.properties or {} %}
+        {% set meta  = b.metadata or {} %}
+        <div class="block-card option-card lib-block-card"
+             data-name="{{ b.name | lower }}"
+             data-code="{{ props.get('alt_name1', '') | lower }}">
+            <div class="option-card-icon" style="font-size:1.4rem; margin: 0.75rem 0 0.5rem;">
+                <i class="fas fa-atom"></i>
+            </div>
+            <h3 style="font-size: 1rem; margin-bottom: 0.25rem;">{{ b.name }}</h3>
+            {% if props.get('alt_name1') %}
+            <p style="font-size: 0.8rem; color: var(--text-secondary);">
+                {{ props.get('alt_name1') }}
+                {% if props.get('alt_name2') %} · {{ props.get('alt_name2') }}{% endif %}
+            </p>
+            {% endif %}
+            {% if meta.get('smiles') %}
+            <p style="font-size: 0.72rem; color: var(--text-secondary); word-break: break-all; margin-top: 0.4rem;">
+                {{ meta.get('smiles') }}
+            </p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 4rem 0; color: var(--text-secondary);">
+        <i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: 1rem; display: block;"></i>
+        <p>No building blocks in your library yet.</p>
+        <a href="{{ url_for('design.design') }}" style="color: var(--primary-color); text-decoration: none; font-weight: 500;">
+            Go to Design → Load Building Blocks to get started
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('lib-search')?.addEventListener('input', function() {
+    const q = this.value.toLowerCase();
+    document.querySelectorAll('.lib-block-card').forEach(card => {
+        const visible = card.dataset.name.includes(q) || card.dataset.code.includes(q);
+        card.style.display = visible ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}

@@ -212,12 +212,9 @@ def explore_blocks() -> Any:
     if not isinstance(state_manager.current_state, DesignState):
         state_manager.set_state(DesignState())
 
-    # TODO: Get actual building blocks data
-    building_blocks = []  # This will be replaced with real data
-
-    return render_template(
-        "design/explore_blocks.html", building_blocks=building_blocks
-    )
+    # Redirect to the dedicated blocks explorer (blocks_routes.py) — it already
+    # has the full toggle/search/preview UI and pulls from the DB correctly.
+    return redirect(url_for("blocks.explore"))
 
 
 @design_bp.route("/save-blocks")

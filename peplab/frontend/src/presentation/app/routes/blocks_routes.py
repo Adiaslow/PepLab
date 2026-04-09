@@ -136,8 +136,13 @@ def view_library() -> Any:
     Returns:
         Rendered library view page
     """
-    # TODO: Get actual library data
-    return render_template("blocks/library.html")
+    try:
+        from peplab.backend.src.infrastructure.repositories.building_block_repository import BuildingBlockRepository
+        repo = BuildingBlockRepository()
+        blocks = repo.get_all_building_blocks()
+    except Exception:
+        blocks = []
+    return render_template("blocks/library.html", blocks=blocks)
 
 
 @blocks_bp.route("/upload-blocks", methods=["POST"])
