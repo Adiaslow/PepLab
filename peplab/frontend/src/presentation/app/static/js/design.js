@@ -117,40 +117,102 @@ function displayResults(data) {
         
         // Add Save to Database button
         const saveBtn = document.createElement("button");
-        saveBtn.className = "btn btn-primary mt-3";
+        saveBtn.className = "btn-save";
         saveBtn.textContent = "Save to Database";
-        saveBtn.onclick = async function() {
-            const libraryName = prompt("Enter a name for this Library:", "Combinatorial Generation");
-            if (!libraryName) return;
-            
-            saveBtn.disabled = true;
-            saveBtn.textContent = "Saving...";
-            try {
-                const response = await fetch("/api/library/save", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        name: libraryName,
-                        sequences: data.result
-                    })
-                });
-                const resData = await response.json();
-                if (response.ok) {
-                    alert(`Successfully saved ${resData.peptide_count} combinations to Library: ${libraryName}`);
-                } else {
-                    alert("Failure: " + (resData.error || "Unknown Error"));
-                }
-            } catch (err) {
-                alert("Failed to connect to API.");
-            } finally {
-                saveBtn.disabled = false;
-                saveBtn.textContent = "Save to Database";
-            }
+        saveBtn.onclick = function() {
+            openSaveModal(data.result);
         };
         outputDiv.appendChild(saveBtn);
     } else {
         outputDiv.innerHTML += "<p>No sequences generated.</p>";
     }
+}
+
+// Open the save-name modal and handle the API call on confirm
+function openSaveModal(sequences) {
+    const saveModal = document.getElementById("save-name-modal");
+    const nameInput = document.getElementById("library-name-input");
+    const confirmBtn = document.getElementById("confirm-save");
+    const cancelBtn = document.getElementById("cancel-save");
+
+    if (!saveModal) return;
+
+    nameInput.value = "";
+    saveModal.style.display = "flex";
+    setTimeout(() => nameInput.focus(), 50);
+
+    // Remove any previous listeners to avoid stacking
+    const newConfirm = confirmBtn.cloneNode(true);
+    const newCancel = cancelBtn.cloneNode(true);
+    confirmBtn.parentNode.replaceChild(newConfirm, confirmBtn);
+    cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
+
+    newCancel.addEventListener("click", () => {
+        saveModal.style.display = "none";
+    });
+
+    newConfirm.addEventListener("click", async () => {
+        const libraryName = nameInput.value.trim();
+        if (!libraryName) {
+            nameInput.focus();
+            return;
+        }
+
+        newConfirm.disabled = true;
+        newConfirm.textContent = "Saving…";
+
+        try {
+            const response = await fetch("/api/library/save", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: libraryName, sequences })
+            });
+            const resData = await response.json();
+            saveModal.style.display = "none";
+            if (response.ok) {
+                showToast(`Saved ${resData.peptide_count} peptides to "${libraryName}"`, "success");
+            } else {
+                showToast("Save failed: " + (resData.error || "Unknown error"), "error");
+            }
+        } catch (err) {
+            saveModal.style.display = "none";
+            showToast("Could not connect to API.", "error");
+        } finally {
+            newConfirm.disabled = false;
+            newConfirm.textContent = "Save";
+        }
+    });
+
+    // Also allow Enter key to confirm
+    nameInput.addEventListener("keydown", function handler(e) {
+        if (e.key === "Enter") { newConfirm.click(); nameInput.removeEventListener("keydown", handler); }
+        if (e.key === "Escape") { newCancel.click(); nameInput.removeEventListener("keydown", handler); }
+    });
+}
+
+// Lightweight toast notification — no alert() required
+function showToast(message, type = "success") {
+    const toast = document.createElement("div");
+    toast.textContent = message;
+    Object.assign(toast.style, {
+        position: "fixed",
+        bottom: "2rem",
+        right: "2rem",
+        padding: "0.85rem 1.4rem",
+        borderRadius: "10px",
+        background: type === "success" ? "#2ecc71" : "#e74c3c",
+        color: "#fff",
+        fontFamily: "'Cartograph CF', sans-serif",
+        fontSize: "0.9rem",
+        fontWeight: "500",
+        zIndex: "9999",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+        opacity: "1",
+        transition: "opacity 0.4s ease"
+    });
+    document.body.appendChild(toast);
+    setTimeout(() => { toast.style.opacity = "0"; }, 2600);
+    setTimeout(() => toast.remove(), 3100);
 }
 
 // Handle navigation between design methods

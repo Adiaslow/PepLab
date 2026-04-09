@@ -2,6 +2,10 @@
 
 {% block title %}Combinatoric Design{% endblock %}
 
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/design.css') }}">
+{% endblock %}
+
 {% block page_content %}
 <div class="page-content">
     <div class="page-header">
@@ -93,6 +97,22 @@
 
 <!-- Results Display -->
 <div id="output" class="results-container"></div>
+
+<!-- Save Library Name Modal -->
+<div id="save-name-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <h3>Save to Database</h3>
+        <p class="modal-hint">Give this library a name so you can find it on the Dashboard.</p>
+        <div>
+            <label for="library-name-input">Library Name</label>
+            <input type="text" id="library-name-input" placeholder="e.g. Dipeptide Permutations" autocomplete="off">
+        </div>
+        <div class="modal-actions">
+            <button id="cancel-save" class="btn-danger">Cancel</button>
+            <button id="confirm-save" class="btn-success">Save</button>
+        </div>
+    </div>
+</div>
 
 </div>
 {% endblock %}
