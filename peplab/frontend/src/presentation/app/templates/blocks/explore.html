@@ -97,7 +97,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     async function loadBuildingBlocks(set) {
         try {
-            const response = await fetch(`/api/building-blocks/${set}`);
+            const response = await fetch(`/blocks/api/building-blocks/${set}`);
             const data = await response.json();
             
             if (data.error) {

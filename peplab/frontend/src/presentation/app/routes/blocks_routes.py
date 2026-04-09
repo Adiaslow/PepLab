@@ -40,6 +40,31 @@ def get_building_blocks(set_name: str) -> Any:
         
         try:
             db_blocks = repo.get_all_building_blocks()
+            
+            # Simple simulation of "sets" for MVP filter capability
+            filtered = []
+            canonical_names = ["Alanine", "Arginine", "Asparagine", "Aspartic Acid", "Cysteine", "Glutamic Acid", "Glutamine", "Glycine", "Histidine", "Isoleucine", "Leucine", "Lysine", "Methionine", "Phenylalanine", "Proline", "Serine", "Threonine", "Tryptophan", "Tyrosine", "Valine"]
+            
+            for b in db_blocks:
+                props = b.properties or {}
+                b_set = props.get("set")
+                if not b_set:
+                    # Fallback determination
+                    if b.name in canonical_names:
+                        b_set = "canonical"
+                    else:
+                        b_set = "user"
+                
+                # 'user' view shows everything they explicitly uploaded recently or non canonical
+                if set_name == "user" and b_set != "canonical":
+                    filtered.append(b)
+                elif set_name == b_set:
+                    filtered.append(b)
+                # Fallback: if 'user' is selected, also show everything custom
+                elif set_name == "user" and "set" not in props and b.name not in canonical_names:
+                    filtered.append(b)
+                    
+            db_blocks = filtered
         except Exception:
             db_blocks = []
 

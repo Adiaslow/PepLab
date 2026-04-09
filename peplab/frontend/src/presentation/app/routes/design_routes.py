@@ -157,9 +157,44 @@ def upload_blocks() -> Any:
 
     if file and allowed_file(file.filename):
         filename: str = secure_filename(file.filename)
-        # TODO: Process the building blocks file
-        # This is where you would add the logic to parse and store the building blocks
-        flash(f"Successfully loaded building blocks from {filename}", "success")
+        try:
+            import csv
+            import io
+            from peplab.backend.src.domain.models.building_block import BuildingBlock
+            from peplab.backend.src.infrastructure.repositories.building_block_repository import BuildingBlockRepository
+            
+            repo = BuildingBlockRepository()
+            stream = io.StringIO(file.read().decode("utf-8", errors="ignore"), newline=None)
+            reader = csv.DictReader(stream, skipinitialspace=True)
+            
+            count = 0
+            for row in reader:
+                name = row.get("name", "").strip()
+                if not name:
+                    continue
+                
+                bb = BuildingBlock(
+                    name=name,
+                    properties={
+                        "alt_name1": row.get("alt_name1", "").strip(),
+                        "alt_name2": row.get("alt_name2", "").strip(),
+                        "position": row.get("position", "").strip()
+                    },
+                    metadata={
+                        "smiles": row.get("smiles", "").strip()
+                    }
+                )
+                
+                try:
+                    repo.get_building_block_by_name(name)
+                except Exception:
+                    # Not found, add it
+                    repo.add_building_block(bb)
+                    count += 1
+                    
+            flash(f"Successfully loaded {count} new building blocks from {filename}", "success")
+        except Exception as e:
+            flash(f"Error processing CSV: {str(e)}", "error")
     else:
         flash("Invalid file type. Please upload a CSV, XLSX, or TXT file.", "error")
 
@@ -192,9 +227,43 @@ def save_blocks() -> Any:
     Returns:
         File download response
     """
-    # TODO: Implement actual building blocks export
-    flash("Building blocks export not yet implemented", "error")
-    return redirect(url_for("design.design"))
+    try:
+        from peplab.backend.src.infrastructure.repositories.building_block_repository import BuildingBlockRepository
+        from flask import Response
+        import csv
+        import io
+        
+        repo = BuildingBlockRepository()
+        
+        # Adding simple fallback empty array if get_all_building_blocks errors
+        try:
+            blocks = repo.get_all_building_blocks()
+        except:
+            blocks = []
+
+        si = io.StringIO()
+        writer = csv.writer(si)
+        writer.writerow(["name", "alt_name1", "alt_name2", "position", "smiles"])
+        
+        for b in blocks:
+            props = b.properties or {}
+            metadata = b.metadata or {}
+            writer.writerow([
+                b.name,
+                props.get("alt_name1", ""),
+                props.get("alt_name2", ""),
+                props.get("position", ""),
+                metadata.get("smiles", "")
+            ])
+            
+        return Response(
+            si.getvalue(),
+            mimetype="text/csv",
+            headers={"Content-Disposition": "attachment; filename=building_blocks.csv"}
+        )
+    except Exception as e:
+        flash(f"Failed to export building blocks: {str(e)}", "error")
+        return redirect(url_for("design.design"))
 
 
 

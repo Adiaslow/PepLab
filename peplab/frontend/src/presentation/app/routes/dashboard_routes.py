@@ -136,9 +136,47 @@ def upload_library() -> Any:
 
     if allowed_file(file.filename):  # Now we know filename is not None
         filename: str = secure_filename(file.filename)
-        # TODO: Process the library file
-        # This is where you would add the logic to parse and process the library file
-        flash(f"Successfully loaded library from {filename}", "success")
+        try:
+            import csv
+            import io
+            from peplab import db
+            from peplab.backend.src.infrastructure.database.models import LibraryModel, PeptideModel
+            import uuid
+
+            stream = io.StringIO(file.read().decode("utf-8", errors="ignore"), newline=None)
+            reader = csv.DictReader(stream, skipinitialspace=True)
+            
+            # Use 'Sequence' if exists, otherwise fallback to first column
+            fieldnames = reader.fieldnames if reader.fieldnames else []
+            seq_col = "Sequence" if "Sequence" in fieldnames else (fieldnames[0] if fieldnames else None)
+            
+            if not seq_col:
+                raise ValueError("Could not determine sequence column from CSV.")
+                
+            new_lib = LibraryModel(
+                id=str(uuid.uuid4()),
+                name=f"Imported Library: {filename}",
+                description="Uploaded from dashboard"
+            )
+            db.session.add(new_lib)
+            
+            count = 0
+            for row in reader:
+                seq_val = row.get(seq_col, "").strip()
+                if not seq_val:
+                    continue
+                pep = PeptideModel(
+                    id=str(uuid.uuid4()),
+                    name=seq_val,
+                    library_id=new_lib.id
+                )
+                db.session.add(pep)
+                count += 1
+                
+            db.session.commit()
+            flash(f"Successfully loaded {count} peptides into new database library from {filename}", "success")
+        except Exception as e:
+            flash(f"Error processing library CSV: {str(e)}", "error")
     else:
         flash("Invalid file type. Please upload a CSV, XLSX, or TXT file.", "error")
 

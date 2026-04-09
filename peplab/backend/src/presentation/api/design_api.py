@@ -5,6 +5,7 @@ from peplab.backend.src.application.services.design.combinatoric.combination imp
 from peplab.backend.src.application.services.design.combinatoric.permutation import Permutation
 from peplab.backend.src.application.services.design.combinatoric.cyclic_permutation import CyclicPermutative
 from peplab.backend.src.application.services.design.combinatoric.dihedral_permutation import DihedralPermutative
+from peplab.backend.src.application.services.design.combinatoric.cartesian_product import CartesianProduct
 from peplab.backend.src.application.interfaces.design.composer import Composer
 
 api_bp = Blueprint("api", __name__)
@@ -45,6 +46,8 @@ def generate_composition():
         "permutation": Permutation,
         "cyclic": CyclicPermutative,
         "dihedral": DihedralPermutative,
+        "cartesian": CartesianProduct,
+        "nary": CartesianProduct
     }
 
     if strategy not in strategy_map:
