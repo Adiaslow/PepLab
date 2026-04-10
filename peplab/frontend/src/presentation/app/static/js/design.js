@@ -123,6 +123,20 @@ function displayResults(data) {
             openSaveModal(data.result);
         };
         outputDiv.appendChild(saveBtn);
+
+        // Add Analyze this library button
+        const analyzeBtn = document.createElement("button");
+        analyzeBtn.className = "btn-save";
+        analyzeBtn.textContent = "⚗ Analyze this Library";
+        analyzeBtn.style.marginLeft = "0.75rem";
+        analyzeBtn.style.color = "var(--primary-color, #007bff)";
+        analyzeBtn.onclick = function() {
+            // Serialize sequences as "Block1 Block2, Block3 Block4" format
+            const formatted = data.result.map(seq => seq.join(" ")).join(", ");
+            sessionStorage.setItem("peplab_analysis_prefill", formatted);
+            window.location.href = "/analysis/cheminformatic";
+        };
+        outputDiv.appendChild(analyzeBtn);
     } else {
         outputDiv.innerHTML += "<p>No sequences generated.</p>";
     }

@@ -60,6 +60,16 @@ document.addEventListener("DOMContentLoaded", function () {
     const sequenceInput = document.getElementById("sequence-input");
     const resultsBody = document.getElementById("results-body");
 
+    // ── Pre-populate from combinatorial design flow ───────────────────────────
+    const prefill = sessionStorage.getItem("peplab_analysis_prefill");
+    if (prefill) {
+        sequenceInput.value = prefill;
+        sessionStorage.removeItem("peplab_analysis_prefill");
+        // Auto-run analysis so the user lands on a populated results table
+        analyzeBtn.click();
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     analyzeBtn.addEventListener("click", async function () {
         const rawText = sequenceInput.value.trim();
         if (!rawText) {
